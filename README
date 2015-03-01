@@ -1,0 +1,80 @@
+TAD.m - Function; Draws heatmap for the specified chr.
+	Usage: TAD(chrNumber)
+	Returns:
+
+LoadGenomeToHists.m - Function; Loads histograms
+	Usage: hists = LoadGenomeToHists(20,40000,5,4)
+
+MotivComp.m - Function; Trys finding motifes.
+
+ShowBounds.m - Script; Loads TAD boundery file, and plots it as vertical lines.
+
+
+1/1/2015
+* First, configure the chr in TAD.m
+* Now run it
+* Set boundery file and run ShowBounds.m
+* Should match somehow
+* Afterwards, use Genome.m on the chr
+* Now, find statistics for bounery histograms?
+
+28/1/2015
+* MotivHist.m now creates the histogram for given blockset
+* Changed several scripts to work as functions
+
+4/2/2015
+* Updates
+- GenomeComp is also script
+- Completed the proceeding method
+* CTCF is CCCTC
+* Some code changes
+
+6/2/2015
+* Changed CMAP actg to acgt
+* Some performance tests
+* Created function GenomeToWordVec
+* Changed GenomeHist accordingly
+* Improved loading of chr's
+* Computed normalized histogram for each block instead of keeping the block itself
+* Implemented load algorithm:
+	1. Load all rows
+	2. convert to numbers [nt2ind or use cmap]
+	3. reshape to long
+	4. build N-grams [sub2ind or with simple loop]
+	5. reshape to 40k blocks
+	6. convert each block to it's histogram
+	7. BAD BLOCKS WILL HAVE BAD HISTOGRAMS
+* Now use LoadGenomeToHists(20,40000,5,4)
+* Histograms are normalized to 1. That means that empty blocks are silently discarded
+
+TODO
+* Looking at offsets before and after bounds is interesting.
+- If boundsend+1,2,3 is still looking like bounds, what does it mean?- Also, it seems like boundsend+30 is random again. Check it.
+* Likelyhood of blocks: use allhists to find logliklyhood of each block
+- Simple, multiply block histogram by language model of allhists
+- After, do the same for language model of start/end
+* Loglikelyhood histogram of all blocks,bounderies,random set
+- Hope that the histograms are very different!
+
+Should reconsider this points after talking with Tommy:
+* For each chr, draw the avg boundery histogram ('language model')
+* Compare the language models
+* Compute language model for all combined
+- This requires changing Motiv & GHis
+
+
+***** OLD CODE ***** 
+@ Genome.m - Function; Loads a genome into memory
+	Usage: Genome(chrNumber)
+	Returns: block vector, wordlen, wordbase, cmap
+
+@ GenomeHist.m - Function; Get block histogram
+	Usage: GenomeHist(targetBlockNum, blockVector, wordlen, wordbase)
+	Returns: wordBlock, histogram vector
+
+@ MotivHist.m - Function; Creates normalized histogram for list of blocks
+	Usage: MotivHist(block numbers, block vector, wordlen, wordbase)
+	Returns: normalized histogram
+
+@ Corr.m - Script; Plots correlation map between adjecent blocks' histograms
+
