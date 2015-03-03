@@ -1,7 +1,7 @@
-function [] = TAD(chrNumber)
+function [a_ret] = TAD(chrNumber)
 DATA_FILE = sprintf('HiC-CSV-Matrices/IMR90_chr%d_40k', chrNumber);
-MIN_DIAG = 5;
-MAX_DIAG = 55;
+MIN_DIAG = 5;%
+MAX_DIAG = 55;%55
 
 DI_TRIM = 1.0/250;
 TRANS_GUESS = [
@@ -28,6 +28,15 @@ for i=1:100
 end
 fprintf('Done\r\n')
 
+%Trim diagonal
+diag_matrix = zeros(size(a));
+for x = MIN_DIAG:MAX_DIAG
+	diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),x);
+	diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),-x);
+end
+clear_diag = logical(diag_matrix);
+a_diag = a .* clear_diag;
+
 %Probability vector
 %Should derive here probability model.
 %However, i've lost it when I normalized.
@@ -36,31 +45,37 @@ fprintf('Done\r\n')
 %It is ok that PDF is larger than 1,
 %It seems that I need the CDF?
 %PDF makes no sense in continiues?
+
+%Generate plot of sum vs. distance
 diag_model = zeros(1,MAX_DIAG);
 a_size = size(a,1);
 for dn = MIN_DIAG:MAX_DIAG
 	diag_model(dn) = sum(diag(a,dn-1));
 end
-figure;
-hold on;
-for i = MIN_DIAG:MAX_DIAG
-	dgn = diag(a,i);
-	dgn = dgn(dgn~=0);
-	[f,xi] = ksdensity(dgn,'function','pdf');
-	plot(xi,f);
-end
-hold off;
 %figure;plot(diag_model);
-return
 
-%Trim diagonal
-diag_matrix = zeros(size(a));
-for x = MIN_DIAG:MAX_DIAG
-	diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),x);
-	%diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),-x);
+fprintf('Diagonalizing... ');
+%Estimate probability for diagonals
+for i = MIN_DIAG:MAX_DIAG
+	dgn = diag(a_diag,i);
+	dgn_clean = dgn(dgn~=0);
+	[f,xi] = ksdensity(dgn_clean,'function','pdf');
+	new_diag = interp1(xi,f,dgn);
+	start_pos = a_size*i + 1;
+	a_diag(start_pos:a_size+1:end) = new_diag';
+
+	dgn = diag(a_diag,-i);
+	dgn_clean = dgn(dgn~=0);
+	[f,xi] = ksdensity(dgn_clean,'function','pdf');
+	new_diag = interp1(xi,f,dgn);
+	start_pos = i+1;
+	end_shift = -a_size*i;
+	a_diag(start_pos:a_size+1:end+end_shift) = new_diag;
 end
-clear_diag = logical(diag_matrix);
-a_diag = a .* clear_diag;
+fprintf('Done\r\n');
+
+%a_ret = a_diag;%log?
+%return
 
 %Generate logscale (disabled)
 a_log = a;
@@ -97,6 +112,7 @@ di_likelystates = round(interp1(likelystates,linspace(1,numel(likelystates),a_wi
 
 imagesc(a_rot,[0 0.01]);
 colorbar;
+axis equal;
 hold on;
 plot(di_plt,'Color','w','LineStyle','-');
 plot(di_ref_x,di_ref_y,'Color','w','LineStyle',':');
@@ -112,4 +128,6 @@ end
 plot((interp1(a,linspace(1,numel(likelystates),a_width))-2)*diag_height + a_width/2 - 0*diag_height,'Color','w','LineStyle','-');
 
 hold off;
+
+a_ret = 0
 end
