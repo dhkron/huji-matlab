@@ -1,0 +1,7 @@
+Domains = TAD domains
+Bounds = TAD bounderies
+
+CSVs = Splitted files! It is domains and bounds being splitted to multiple csv sheets (and converted from XLS in the process)
+	In 'domains', 12 denotes 'IMR90 Combied' sheet
+
+ChrSplit = convert csv file to per-chr csv file
