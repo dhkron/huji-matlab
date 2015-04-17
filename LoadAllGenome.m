@@ -8,7 +8,7 @@ end
 if ~exist('bounds') || size(bounds,2)~=22
 	bounds = {};
 	for i=1:22
-		bounds{i} = load(sprintf('Domains/bounds.IMR90.chr%d',i));
+		bounds{i} = load(sprintf('TADs/bounds.IMR90.chr%d',i));
 	end
 end
 if ~exist('bDatas') || size(bDatas,2)~=22

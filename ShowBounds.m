@@ -1,6 +1,6 @@
 function [] = ShowBounds(chrNumber)
 	hold on;
-	bounds = load(sprintf('Domains/bounds.IMR90.chr%d',chrNumber));
+	bounds = load(sprintf('TADs/bounds.IMR90.chr%d',chrNumber));
 	for a = bounds'
 		b = a/40000*sqrt(2);
 		line([b(1) b(1)],[-1e6 1e6],'Color',[0 1 0 0.5],'LineWidth',2);

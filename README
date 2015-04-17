@@ -9,6 +9,7 @@ MotivComp.m - Function; Trys finding motifes.
 
 ShowBounds.m - Script; Loads TAD boundery file, and plots it as vertical lines.
 
+ParseGM.m - Script; Analyizes the GMM paramaters derived from an Hi-C measure, using TAD function.
 
 1/1/2015
 * First, configure the chr in TAD.m
@@ -62,6 +63,14 @@ Should reconsider this points after talking with Tommy:
 * Compute language model for all combined
 - This requires changing Motiv & GHis
 
+17/4/15
+* Updated 'Domains' dir to 'TAD' dir
+* General modifications to code
+* Generated TAD domains
+
+TODO
+Take TADs and compute probabilistic models inside and outside them.
+Outside should be gaussian, inside MIGHT be gaussian.
 
 ***** OLD CODE ***** 
 @ Genome.m - Function; Loads a genome into memory
