@@ -1,3 +1,4 @@
+function [meansBg, meansIn, sigmaBg, sigmaIn, probBg, probIn] = ParseGM(a, plotLog)
 meansBg = zeros(size(a));
 meansIn = zeros(size(a));
 sigmaBg = zeros(size(a));
@@ -19,5 +20,17 @@ for i_cell = 1:numel(a)
 	sigmaIn(i_cell) = db.Sigma(i_in);
 	probBg(i_cell) = db.ComponentProportion(i_bg);
 	probIn(i_cell) = db.ComponentProportion(i_in);
+end % Loop
 
+a_bg = polyfit(log(1:numel(a)), log(meansBg),1);
+a_in = polyfit(log(1:numel(a)), log(meansIn),1);
+fprintf('Power law of background: %f (%f)\r\n',a_bg)
+fprintf('Power law of interaction: %f (%f)\r\n',a_in);
+
+if exist('plotLog','var') && plotLog
+	loglog(1:numel(a), meansBg);
+	hold on;
+	loglog(1:numel(a), meansIn);
 end
+end % Function
+

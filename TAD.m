@@ -2,7 +2,9 @@ function [a_ret] = TAD(chrNumber)
 DATA_FILE = sprintf('HiC-CSV-Matrices/IMR90_chr%d_40k', chrNumber);
 MIN_DIAG = 1;%0 is the middle one
 MAX_DIAG = 55;%55
+BLOCK_SIZE = 40000;
 
+%For directionality index
 DI_TRIM = 1/250.0;%Both work, interestingly. 1e-10%1/250.0;
 TRANS_GUESS = [
 [0.9000 0.0900 0.0100];
@@ -25,77 +27,97 @@ fprintf('Done\r\n');
 
 %Normalize
 fprintf('Normalizing... ');
-a_small = ones(size(a)); %Just for not reallocating
-for i=1:100
-	%Add something small
-	a = a + a_small*min(a(a>0))/10;
-	min(a(:)),
-	a = (a./repmat(sum(a),size(a,1),1))';
-	a(isnan(a))=0;
-end
+%a = a + ones(size(a));
+%for i=1:100
+%	a = (a./repmat(sum(a),size(a,1),1))';
+%end
 fprintf('Done\r\n')
 
 %Trim diagonal
 diag_matrix = zeros(size(a));
 for x = MIN_DIAG:MAX_DIAG
 	diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),x);
-	%diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),-x);
 end
 clear_diag = logical(diag_matrix);
 a_diag = a .* clear_diag;
 
-%Probability vector
-%Should derive here probability model.
-%However, i've lost it when I normalized.
-%Should derive probabilistic model from diag histogram,
-%And calculate probabilities using it.
-%It is ok that PDF is larger than 1,
-%It seems that I need the CDF?
-%PDF makes no sense in continiues?
-
-%Generate plot of sum vs. distance
-diag_model = zeros(1,MAX_DIAG);
+%Generate GMM data
 a_size = size(a,1);
-for dn = MIN_DIAG:MAX_DIAG
-	diag_model(dn) = sum(diag(a,dn-1));
-end
-%figure;plot(diag_model);
-
 a_ret = {};
-
-a_prob = ones(a_size);
 fprintf('Diagonalizing... ');
-figure; hold on; title('Diagonal interaction strength distribution');
-%Estimate probability for diagonals
+warning('off','stats:gmdistribution:FailedToConverge');
 for i = MIN_DIAG:MAX_DIAG
 	dgn = diag(a_diag,i);
 	dgn_clean = dgn(dgn~=0);
-	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf'); %What does this line evne do? Bleh
-	new_diag = f;
-	start_pos = a_size*i + 1;
-	a_prob(start_pos:a_size+1:end) = new_diag';
 
 	GMModel = fitgmdist(dgn_clean,2);
 	a_ret{i}=GMModel;
-	scatter(xi,f,11,'filled');
-
-%	dgn = diag(a_diag,-i);
-%	dgn_clean = dgn(dgn~=0);
-%	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
-%	%new_diag = interp1(xi,f,dgn);
-%	new_diag = f;
-%	start_pos = i+1;
-%	end_shift = -a_size*i;
-%	a_prob(start_pos:a_size+1:end+end_shift) = new_diag;
 end
-hold off;
+w = warning('query','last');
 fprintf('Done\r\n');
 
-%a_ret = a_diag;
-%return
+%Use public TAD data to extract intraTAD stuff
+fprintf('Extracting TADs... ');
+domains = load(sprintf('TADs/domains.IMR90.chr%d', chrNumber));
+domains = floor(domains/BLOCK_SIZE)+1;
+domains_map = zeros(a_size);
+for i = MIN_DIAG:MAX_DIAG
+	start_pos = a_size*i + 1;
+	domains_diag = zeros(1,a_size-i);
+	for domain = domains'
+		bnd_start = domain(1)+1;
+		bnd_end = domain(2)-i;
+		min_bnd = min(bnd_start,bnd_end);
+		min_bnd = max(1, min_bnd);
+		max_bnd = max(bnd_start,bnd_end);
+		max_bnd = min(max_bnd, a_size-i);
+		domains_diag(min_bnd:max_bnd) = ~domains_diag(min_bnd:max_bnd);
 
-%Override a_diag 
-%a_diag = (a_prob); %Good for nothing at the moment, I want PDT!
+		%min_bnd = max(1, bnd_start);
+		%max_bnd = min(bnd_end, a_size-i);
+		%domains_diag(min_bnd:max_bnd) = 1; %Do not extend TADs to tiles
+	end
+	domains_map(start_pos:a_size+1:end) = domains_diag;
+	%domains_map(start_pos:a_size+1:end) = round(rand(1,a_size-i)); %Random model
+end
+a_tad = domains_map .* a_diag;
+a_bound = (1-domains_map) .* a_diag; %For bounderies
+fprintf('Done\r\n');
+
+%Extract probability for TAD diagonals only
+figure;
+iplt = 1;
+for i = [2,5,10,20,30,45]
+	dgn = diag(a_tad,i);
+	dgn_clean = dgn(dgn~=0);
+	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
+
+	subplot(2,3,iplt);
+	scatter(xi,f,11,'filled');
+	hold on;
+
+	dgn = diag(a_bound,i);
+	dgn_clean = dgn(dgn~=0);
+	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
+
+	scatter(xi,f,11,'filled');
+	title(sprintf('Diagonal=%d',i));
+	legend('intra-domains','bounderies');
+	iplt = iplt+1;
+end
+suptitle('Probability density of interactions strength, for several diagonals');
+a_ret = a_tad;
+%figure; imagesc(domains_map); axis equal; colorbar;
+return;
+
+%Now, remember how TADs are looking in the 2d unrotated map.
+%I should add 1 to the START of the TAD only! Depends on stuff. Just add to begginig and see how it works.
+%When they collide - reverse? or just always put lower and higher? This might word better
+%Then, the world!
+
+%Set return value to be diagonalized matrix
+a_ret = a_diag;
+%return
 
 %Generate logscale (disabled)
 a_display = a_diag;

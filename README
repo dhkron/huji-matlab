@@ -68,6 +68,10 @@ Should reconsider this points after talking with Tommy:
 * General modifications to code
 * Generated TAD domains
 
+22/4/15
+* Fixed bug in addition of one during normalization
+* Change ParseGM to a function, added some features
+
 TODO
 Take TADs and compute probabilistic models inside and outside them.
 Outside should be gaussian, inside MIGHT be gaussian.
