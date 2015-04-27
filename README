@@ -72,9 +72,11 @@ Should reconsider this points after talking with Tommy:
 * Fixed bug in addition of one during normalization
 * Change ParseGM to a function, added some features
 
+27/4/15
+* Taken TADs and computed probabilistic models inside and outside them.
+
 TODO
-Take TADs and compute probabilistic models inside and outside them.
-Outside should be gaussian, inside MIGHT be gaussian.
+* Perhaps use new Hi-C data! Theres more accurate stuff than liberman-aiden IMR90s
 
 ***** OLD CODE ***** 
 @ Genome.m - Function; Loads a genome into memory

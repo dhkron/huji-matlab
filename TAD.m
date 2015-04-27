@@ -26,12 +26,14 @@ a=load(DATA_FILE);
 fprintf('Done\r\n');
 
 %Normalize
-fprintf('Normalizing... ');
-%a = a + ones(size(a));
-%for i=1:100
-%	a = (a./repmat(sum(a),size(a,1),1))';
-%end
-fprintf('Done\r\n')
+if 1
+	fprintf('Normalizing... ');
+	a = a + ones(size(a));
+	for i=1:100
+		a = (a./repmat(sum(a),size(a,1),1))';
+	end
+	fprintf('Done\r\n')
+end
 
 %Trim diagonal
 diag_matrix = zeros(size(a));
@@ -88,7 +90,8 @@ fprintf('Done\r\n');
 figure;
 iplt = 1;
 for i = [2,5,10,20,30,45]
-	dgn = diag(a_tad,i);
+	dgn = log(1+diag(a_tad,i)); %This does not do anything apparently
+	%dgn = diag(a_tad,i);
 	dgn_clean = dgn(dgn~=0);
 	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
 
@@ -96,7 +99,8 @@ for i = [2,5,10,20,30,45]
 	scatter(xi,f,11,'filled');
 	hold on;
 
-	dgn = diag(a_bound,i);
+	dgn = log(1+diag(a_bound,i)); 
+	%dgn = diag(a_bound,i);
 	dgn_clean = dgn(dgn~=0);
 	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
 
