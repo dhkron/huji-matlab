@@ -76,7 +76,26 @@ Should reconsider this points after talking with Tommy:
 * Taken TADs and computed probabilistic models inside and outside them.
 
 TODO
-* Perhaps use new Hi-C data! Theres more accurate stuff than liberman-aiden IMR90s
+* Perhaps use new Hi-C data! Theres more accurate stuff than liberman-aiden IMR90s. They say 15000 million interactions, along with diploid stuff. That's 30 times more interactions than me.
+* Perhaps I can show that there are three compartments?
+* Also - my implementation of IC was all wrong. See "Hi-Corrector: A fast, scalable and memory-efficient package for normalizing large-scale Hi-C data".
+> Algorithm:
+	Input: the matrix O
+	Output: the bias vector b
+	Procedure: repeat the following steps in a limited number of iterations.
+		1. Initialize b = vector of 1
+		2. Perform the following steps in a limited number of iterations
+			1) Compute the additional bias vector t = sum of rows
+			2) Oij = Oij/(ti*tj)
+			3) bi = bi*ti
+		3. Finally, Tij = Oij/(bi*bi)
+> If it works properly, should consider precomputing bi.
+> Also, perhaps I can remove bad columns/rows beforehand === remove blocks from center. For example, if the row is too low beyond a thershold.
+> Generally, can standartize the heatmap format to something formal? worth the effot?
+* Can a random folding model, and looping constraints explain the TAD structure?
+
+>> options = fitoptions('gauss2','Lower',[0 3e4 10000 0 0 0],'Upper',[Inf 5e4 15000 1e-5 1000 Inf]); ff = fit(xi.', f.',ff = s2',options), plot(ff,xi,f);                                                                                       
+
 
 ***** OLD CODE ***** 
 @ Genome.m - Function; Loads a genome into memory

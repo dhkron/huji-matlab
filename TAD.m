@@ -4,6 +4,9 @@ MIN_DIAG = 1;%0 is the middle one
 MAX_DIAG = 55;%55
 BLOCK_SIZE = 40000;
 
+%Quack, initialize return value
+a_ret = 0;
+
 %For directionality index
 DI_TRIM = 1/250.0;%Both work, interestingly. 1e-10%1/250.0;
 TRANS_GUESS = [
@@ -17,113 +20,221 @@ EMIS_GUESS = [
 [0 0.0055 0.0247 0.3205 0.6493];
 ];
 
-%Quack
-a_ret = 0;
-
 %Load
 fprintf('Loading... ');
 a=load(DATA_FILE);
 fprintf('Done\r\n');
 
 %Normalize
-if 1
-	fprintf('Normalizing... ');
-	a = a + ones(size(a));
-	for i=1:100
-		a = (a./repmat(sum(a),size(a,1),1))';
-	end
-	fprintf('Done\r\n')
+%% The problematic cells are killed by b, having inf in their location!
+%% Any following code MUST drop zero value cells.
+%% This also kills other zeros cells
+fprintf('Normalizing... ');
+norm_vec_filename = sprintf('HiC-CSV-Matrices/normalization_vector_IMR90_chr%d_40k.mat', chrNumber);
+if exist(norm_vec_filename,'file')
+	fprintf('Norm vector found... ');
+	load(norm_vec_filename,'b');
+else
+	fprintf('Recalculating norm vector... ');
+	b = Normalize(a);
+	fprintf('Saving to dist... ');
+	save(norm_vec_filename,'b');
 end
+a = a ./ (b'*b);
+fprintf('Done\r\n');
+
+%Sort diagonals to see what happens
+figure;
+for i = MIN_DIAG+5%MAX_DIAG 
+	dgn = diag(a,i);
+	dgn = dgn(dgn~=0);
+	dgn = sort(dgn);
+	dgn = log(dgn);
+	plot(dgn);
+	hold on;
+end
+hold off;
+a_ret = a; return;
 
 %Trim diagonal
-diag_matrix = zeros(size(a));
-for x = MIN_DIAG:MAX_DIAG
-	diag_matrix = diag_matrix + diag(ones(size(a,1)-x,1),x);
-end
-clear_diag = logical(diag_matrix);
+fprintf('Creating diag matrix... ');
+clear_diag = triu(tril(ones(size(a)),MAX_DIAG),MIN_DIAG);
 a_diag = a .* clear_diag;
+fprintf('Done\r\n');
 
 %Generate GMM data
+fprintf('GMMing... ');
 a_size = size(a,1);
-a_ret = {};
-fprintf('Diagonalizing... ');
+a_gmm = {};
+a_pdt = zeros(a_size);
+a_pdb = zeros(a_size);
 warning('off','stats:gmdistribution:FailedToConverge');
 for i = MIN_DIAG:MAX_DIAG
 	dgn = diag(a_diag,i);
-	dgn_clean = dgn(dgn~=0);
+	dgn_clean = dgn(dgn~=0); %It is important to fit WITHOUT the zeros
+	dgn_clean = log(dgn_clean+1);
 
-	GMModel = fitgmdist(dgn_clean,2);
-	a_ret{i}=GMModel;
+	options = statset('MaxIter',1000);
+	GMModel = fitgmdist(dgn_clean,2,'Options',options);
+	a_gmm{i}=GMModel;
+
+	if GMModel.mu(1) < GMModel.mu(2)
+		i_bg = 1;
+		i_in = 2;
+	else
+		i_bg = 2;
+		i_in = 1;
+	end
+	start_pos = a_size*i + 1;
+	diag_elem = log(diag(a_diag,i)+1); %Still maps zero to zero
+
+	pdt_diag = normpdf(diag_elem,GMModel.mu(i_in),GMModel.Sigma(i_in))*GMModel.ComponentProportion(i_in);
+	pdt_diag(diag_elem==0) = 0;
+	a_pdt(start_pos:a_size+1:end) = pdt_diag;
+
+	pdb_diag = normpdf(diag_elem,GMModel.mu(i_bg),GMModel.Sigma(i_bg))*GMModel.ComponentProportion(i_bg);
+	pdb_diag(diag_elem==0) = 0;
+	a_pdb(start_pos:a_size+1:end) = pdb_diag;
+
+	[~,msgid] = lastwarn;
+	if strcmp(msgid, 'stats:gmdistribution:FailedToConverge')
+		fprintf('Failed to converge at diag %d\r\n',i);
+		warning('')
+	end
 end
 w = warning('query','last');
 fprintf('Done\r\n');
+
+a_unified = log(a_pdt)-log(a_pdb);
 
 %Use public TAD data to extract intraTAD stuff
 fprintf('Extracting TADs... ');
 domains = load(sprintf('TADs/domains.IMR90.chr%d', chrNumber));
 domains = floor(domains/BLOCK_SIZE)+1;
 domains_map = zeros(a_size);
+domains_map_xor = zeros(a_size);
+domains_map_one = zeros(a_size);
+%For calculating TAD strength vs. Length
+tad_size = zeros(1,a_size);
+tad_color = zeros(1,a_size);
+tad_index = 1;
 for i = MIN_DIAG:MAX_DIAG
 	start_pos = a_size*i + 1;
-	domains_diag = zeros(1,a_size-i);
+	domains_diag_xor = zeros(1,a_size-i);
+	domains_diag_one = zeros(1,a_size-i);
 	for domain = domains'
-		bnd_start = domain(1)+1;
+		domain(2) = min(domain(2),a_size); %Fix overflow
+
+		bnd_start = domain(1);
 		bnd_end = domain(2)-i;
 		min_bnd = min(bnd_start,bnd_end);
 		min_bnd = max(1, min_bnd);
 		max_bnd = max(bnd_start,bnd_end);
 		max_bnd = min(max_bnd, a_size-i);
-		domains_diag(min_bnd:max_bnd) = ~domains_diag(min_bnd:max_bnd);
+		domains_diag_xor(min_bnd:max_bnd) = ~domains_diag_xor(min_bnd:max_bnd);
 
-		%min_bnd = max(1, bnd_start);
-		%max_bnd = min(bnd_end, a_size-i);
-		%domains_diag(min_bnd:max_bnd) = 1; %Do not extend TADs to tiles
+		min_bnd = max(1, bnd_start);
+		max_bnd = min(bnd_end, a_size-i);
+		domains_diag_one(min_bnd:max_bnd) = 1; %Do not extend TADs to tiles
+
+		%Calcualte mean color
+		tad_sum = sum(sum((a_unified(domain(1):domain(2),domain(1):domain(2))))); %Can use log here
+		tad_count = numel(a_unified(domain(1):domain(2),domain(1):domain(2)));
+		tad_size(tad_index) = domain(2)-domain(1);
+		tad_color(tad_index) = tad_sum/tad_count;
+		tad_index = tad_index + 1;
 	end
-	domains_map(start_pos:a_size+1:end) = domains_diag;
+	domains_map_xor(start_pos:a_size+1:end) = domains_diag_xor;
+	domains_map_one(start_pos:a_size+1:end) = domains_diag_one;
 	%domains_map(start_pos:a_size+1:end) = round(rand(1,a_size-i)); %Random model
 end
+domains_map_crs = domains_map_xor-domains_map_one; %Just TAD interactions, not TADs
+
+%Plot TAD strength vs. Length
+if 1 
+figure;
+scatter(tad_size*BLOCK_SIZE,tad_color);
+title('Mean interaction strength vs. TAD length');
+xlabel('Length (bp)');
+ylabel('Mean Interaction strength');
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+coeffs = polyfit(log(tad_size*BLOCK_SIZE),log(tad_color),1);
+hold on;
+plot(tad_size*BLOCK_SIZE,((tad_size*BLOCK_SIZE).^coeffs(1))*exp(coeffs(2)));
+hold off;
+legend('Original Data',sprintf('Line Fit ax^b\r\na=%d\r\nb=%d',exp(coeffs(2)),coeffs(1)));
+end
+
+%Select the proper separation model
+domains_map = domains_map_one; %No tiles, just TADs
+bounds_map = 1-domains_map_xor; %Whatever is not tads or interactions
 a_tad = domains_map .* a_diag;
-a_bound = (1-domains_map) .* a_diag; %For bounderies
+a_bound = bounds_map .* a_diag; %For bounderies
 fprintf('Done\r\n');
 
 %Extract probability for TAD diagonals only
+if 0
 figure;
 iplt = 1;
 for i = [2,5,10,20,30,45]
-	dgn = log(1+diag(a_tad,i)); %This does not do anything apparently
-	%dgn = diag(a_tad,i);
+	dgn = diag(a_tad,i);
 	dgn_clean = dgn(dgn~=0);
-	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
+	dgn_clean = log(dgn_clean+1);
+	[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
 
 	subplot(2,3,iplt);
 	scatter(xi,f,11,'filled');
 	hold on;
 
-	dgn = log(1+diag(a_bound,i)); 
-	%dgn = diag(a_bound,i);
+	dgn = diag(a_bound,i);
 	dgn_clean = dgn(dgn~=0);
-	[f,xi] = ksdensity(dgn_clean,dgn,'function','pdf');
+	dgn_clean = log(dgn_clean+1);
+	[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
 
 	scatter(xi,f,11,'filled');
-	title(sprintf('Diagonal=%d',i));
+	title(sprintf('Distance=%d (i=%d)',i*BLOCK_SIZE,i));
 	legend('intra-domains','bounderies');
 	iplt = iplt+1;
 end
 suptitle('Probability density of interactions strength, for several diagonals');
-a_ret = a_tad;
-%figure; imagesc(domains_map); axis equal; colorbar;
+end
+
+%QQPlots for several diags
+if 0
+dgn = diag(a_bound,2);
+dgn = dgn(dgn~=0);
+figure;qqplot(log(dgn+1));title('qq plot, bound, 80k');
+dgn = diag(a_tad,2);
+dgn = dgn(dgn~=0);
+figure;qqplot(log(dgn+1));title('qq plot, tad, 80k');
+dgn = diag(a_tad,20);
+dgn = dgn(dgn~=0);
+figure;qqplot(log(dgn+1));title('qq plot, tad, 800k');
+end
+
+%Plot Public TAD mapping & Original image
+dispbox = 1:a_size;
+if 1
+a_diag_disp = triu(log(a_diag))+tril(domains_map_one' + domains_map_xor');
+a_diag_disp = a_diag_disp(dispbox,dispbox);
+figure; imagesc(a_diag_disp); axis equal; colorbar; caxis([0 8]);
+title('log(Heatmap) vs. Dixon TAD Mapping');
+end
+
+if 1
+a_unif_disp = triu(a_unified)+tril(domains_map_one' + domains_map_xor');
+a_unif_disp = a_unif_disp(dispbox,dispbox);
+figure; imagesc(a_unif_disp); colorbar; axis equal; caxis([-3 3]); 
+title('logPrTAD - logPrBackground vs. Dixon TAD Mapping');
+end
+
+%a_ret = (domains_map).*a_diag + a_diag';
+%a_ret = a_diag;
+a_ret = a_gmm;
 return;
 
-%Now, remember how TADs are looking in the 2d unrotated map.
-%I should add 1 to the START of the TAD only! Depends on stuff. Just add to begginig and see how it works.
-%When they collide - reverse? or just always put lower and higher? This might word better
-%Then, the world!
-
-%Set return value to be diagonalized matrix
-a_ret = a_diag;
-%return
-
-%Generate logscale (disabled)
+%Used for rotated stuff. May use log here
 a_display = a_diag;
 
 %Calculte forward probability
