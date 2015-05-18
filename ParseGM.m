@@ -38,7 +38,7 @@ if exist('plotLog','var') && plotLog
 	loglog(x_vals, meansBg-sigmaBg,'b--');
 	loglog(x_vals, meansIn+sigmaIn,'r--');
 	loglog(x_vals, meansIn-sigmaIn,'r--');
-	plot(x_vals,x_vals.^a_bg(1)*exp(a_bg(2)),'b-');
+	plot(x_vals,x_vals.^a_bg(2)*exp(a_bg(2)),'b-');
 	plot(x_vals,x_vals.^a_in(1)*exp(a_in(2)),'r-');
 	legend('Background','Interaction')
 	title('Mean (with sigma) vs. Block distance')

@@ -23,6 +23,7 @@ EMIS_GUESS = [
 %Load
 fprintf('Loading... ');
 a=load(DATA_FILE);
+a_size = size(a,1);
 fprintf('Done\r\n');
 
 %Normalize
@@ -43,18 +44,10 @@ end
 a = a ./ (b'*b);
 fprintf('Done\r\n');
 
-%Sort diagonals to see what happens
-figure;
-for i = MIN_DIAG+5%MAX_DIAG 
-	dgn = diag(a,i);
-	dgn = dgn(dgn~=0);
-	dgn = sort(dgn);
-	dgn = log(dgn);
-	plot(dgn);
-	hold on;
+if 0 %Normalize with evil unethical method
+	a_eq = EqualizeSpectrum(a,MIN_DIAG,MAX_DIAG);
 end
-hold off;
-a_ret = a; return;
+%a_ret = a; return;
 
 %Trim diagonal
 fprintf('Creating diag matrix... ');
@@ -64,7 +57,6 @@ fprintf('Done\r\n');
 
 %Generate GMM data
 fprintf('GMMing... ');
-a_size = size(a,1);
 a_gmm = {};
 a_pdt = zeros(a_size);
 a_pdb = zeros(a_size);
@@ -105,7 +97,12 @@ end
 w = warning('query','last');
 fprintf('Done\r\n');
 
+a_pdt(a_pdt<=0) = 0;
+a_pdt(isnan(a_pdt)) = 0;
+a_pdt(a_pdt<=0) = 0;
+a_pdt(isnan(a_pdt)) = 0;
 a_unified = log(a_pdt)-log(a_pdb);
+a_unified(isnan(a_unified)) = 0;
 
 %Use public TAD data to extract intraTAD stuff
 fprintf('Extracting TADs... ');
@@ -137,9 +134,9 @@ for i = MIN_DIAG:MAX_DIAG
 		max_bnd = min(bnd_end, a_size-i);
 		domains_diag_one(min_bnd:max_bnd) = 1; %Do not extend TADs to tiles
 
-		%Calcualte mean color
-		tad_sum = sum(sum((a_unified(domain(1):domain(2),domain(1):domain(2))))); %Can use log here
-		tad_count = numel(a_unified(domain(1):domain(2),domain(1):domain(2)));
+		%For calculating TAD strength vs. Length
+		tad_sum = sum(sum((a(domain(1):domain(2),domain(1):domain(2))))); %Can use log here
+		tad_count = numel(a(domain(1):domain(2),domain(1):domain(2)));
 		tad_size(tad_index) = domain(2)-domain(1);
 		tad_color(tad_index) = tad_sum/tad_count;
 		tad_index = tad_index + 1;
@@ -151,7 +148,7 @@ end
 domains_map_crs = domains_map_xor-domains_map_one; %Just TAD interactions, not TADs
 
 %Plot TAD strength vs. Length
-if 1 
+if 0 
 figure;
 scatter(tad_size*BLOCK_SIZE,tad_color);
 title('Mean interaction strength vs. TAD length');
@@ -214,7 +211,7 @@ figure;qqplot(log(dgn+1));title('qq plot, tad, 800k');
 end
 
 %Plot Public TAD mapping & Original image
-dispbox = 1:a_size;
+dispbox = 1200:1400;%1:a_size;
 if 1
 a_diag_disp = triu(log(a_diag))+tril(domains_map_one' + domains_map_xor');
 a_diag_disp = a_diag_disp(dispbox,dispbox);
@@ -229,10 +226,9 @@ figure; imagesc(a_unif_disp); colorbar; axis equal; caxis([-3 3]);
 title('logPrTAD - logPrBackground vs. Dixon TAD Mapping');
 end
 
-%a_ret = (domains_map).*a_diag + a_diag';
-%a_ret = a_diag;
-a_ret = a_gmm;
-return;
+%a_ret = (domains_map).*a_diag + a_diag'; return;
+%a_ret = a_diag; return;
+a_ret = a_gmm; return;
 
 %Used for rotated stuff. May use log here
 a_display = a_diag;
