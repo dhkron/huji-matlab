@@ -1,13 +1,16 @@
-function a_gmm = AnalyzeGMM(a,MIN_DIAG,MAX_DIAG)
-	a_gmm = {}
-	warning('off','stats:gmdistribution:FailedToConverge');
-	for i = MIN_DIAG:MAX_DIAG
-		dgn = diag(a,i);
-		dgn_clean = dgn(dgn~=0); %Zeros are bad for fitting?
-		dgn_clean = log(dgn_clean+1); %Log-normal %Should replace 1 with something smarter
+function a_gmm = AnalyzeGMM(a,MIN_DIAG,MAX_DIAG,k)
+a_gmm = {};
+warning('off','stats:gmdistribution:FailedToConverge');
+for i = MIN_DIAG:MAX_DIAG
+	%dgn = diag(a,i);
+	%dgn_clean = dgn(dgn>0); %Zeros are bad for fitting??
+	%dgn_clean = log(dgn_clean); %Log-normal % MUST BE CONSISTENT HERE
+	dgn_clean = GetDiag(a,i,1,1,1,1);%Rm Zeros&Nan, Log % BE CONSISTENT IN LOG NORMAL +1 or +0
+
+	if numel(dgn_clean)>0
 
 		options = statset('MaxIter',1000);
-		GMModel = fitgmdist(dgn_clean,2,'Options',options);
+		GMModel = fitgmdist(dgn_clean,k,'Options',options);
 		a_gmm{i}=GMModel;
 
 		[~,msgid] = lastwarn;
@@ -15,5 +18,10 @@ function a_gmm = AnalyzeGMM(a,MIN_DIAG,MAX_DIAG)
 			fprintf('Failed to converge at diag %d\r\n',i);
 			warning('')
 		end
+	else
+		a_gmm{i}.mu = 0;
+		a_gmm{i}.Sigma = 0;
 	end
+end
+w = warning('query','last');
 end

@@ -1,24 +1,11 @@
 function [a_ret] = TAD(chrNumber)
 DATA_FILE = sprintf('HiC-CSV-Matrices/IMR90_chr%d_40k', chrNumber);
-MIN_DIAG = 1;%0 is the middle one
-MAX_DIAG = 55;%55
+MIN_DIAG = 1;%0 is the middle one; %SETTING MINDIAG TO HIGHER IS DANGEROUS
+MAX_DIAG = 75;%55
 BLOCK_SIZE = 40000;
 
 %Quack, initialize return value
 a_ret = 0;
-
-%For directionality index
-DI_TRIM = 1/250.0;%Both work, interestingly. 1e-10%1/250.0;
-TRANS_GUESS = [
-[0.9000 0.0900 0.0100];
-[0.1000 0.8000 0.1000];
-[0.0100 0.0900 0.9000];
-];
-EMIS_GUESS = [
-[0.7130 0.2754 0.0058 0.0058 0];
-[0 0 0.9828 0.0172 0];
-[0 0.0055 0.0247 0.3205 0.6493];
-];
 
 %Load
 fprintf('Loading... ');
@@ -42,10 +29,18 @@ else
 	save(norm_vec_filename,'b');
 end
 a = a ./ (b'*b);
+% ( sum(a)==0) ) == (b==Inf)
+% These are the indices of interest
+% ind = (b!=Inf)
+% a_clean = a(ind,ind)
+% a_orig(ind,ind) = a_clean
+% When removing, TAD structure is curios as well...
 fprintf('Done\r\n');
 
 if 0 %Normalize with evil unethical method
+	fprintf('Equalizing Spectrum...')
 	a_eq = EqualizeSpectrum(a,MIN_DIAG,MAX_DIAG);
+	fprintf('Done\r\n');
 end
 %a_ret = a; return;
 
@@ -55,252 +50,159 @@ clear_diag = triu(tril(ones(size(a)),MAX_DIAG),MIN_DIAG);
 a_diag = a .* clear_diag;
 fprintf('Done\r\n');
 
-%Generate GMM data
-fprintf('GMMing... ');
-a_gmm = {};
-a_pdt = zeros(a_size);
-a_pdb = zeros(a_size);
-warning('off','stats:gmdistribution:FailedToConverge');
-for i = MIN_DIAG:MAX_DIAG
-	dgn = diag(a_diag,i);
-	dgn_clean = dgn(dgn~=0); %It is important to fit WITHOUT the zeros
-	dgn_clean = log(dgn_clean+1);
-
-	options = statset('MaxIter',1000);
-	GMModel = fitgmdist(dgn_clean,2,'Options',options);
-	a_gmm{i}=GMModel;
-
-	if GMModel.mu(1) < GMModel.mu(2)
-		i_bg = 1;
-		i_in = 2;
-	else
-		i_bg = 2;
-		i_in = 1;
-	end
-	start_pos = a_size*i + 1;
-	diag_elem = log(diag(a_diag,i)+1); %Still maps zero to zero
-
-	pdt_diag = normpdf(diag_elem,GMModel.mu(i_in),GMModel.Sigma(i_in))*GMModel.ComponentProportion(i_in);
-	pdt_diag(diag_elem==0) = 0;
-	a_pdt(start_pos:a_size+1:end) = pdt_diag;
-
-	pdb_diag = normpdf(diag_elem,GMModel.mu(i_bg),GMModel.Sigma(i_bg))*GMModel.ComponentProportion(i_bg);
-	pdb_diag(diag_elem==0) = 0;
-	a_pdb(start_pos:a_size+1:end) = pdb_diag;
-
-	[~,msgid] = lastwarn;
-	if strcmp(msgid, 'stats:gmdistribution:FailedToConverge')
-		fprintf('Failed to converge at diag %d\r\n',i);
-		warning('')
-	end
-end
-w = warning('query','last');
-fprintf('Done\r\n');
-
-a_pdt(a_pdt<=0) = 0;
-a_pdt(isnan(a_pdt)) = 0;
-a_pdt(a_pdt<=0) = 0;
-a_pdt(isnan(a_pdt)) = 0;
-a_unified = log(a_pdt)-log(a_pdb);
-a_unified(isnan(a_unified)) = 0;
-
 %Use public TAD data to extract intraTAD stuff
 fprintf('Extracting TADs... ');
-domains = load(sprintf('TADs/domains.IMR90.chr%d', chrNumber));
-domains = floor(domains/BLOCK_SIZE)+1;
-domains_map = zeros(a_size);
-domains_map_xor = zeros(a_size);
-domains_map_one = zeros(a_size);
-%For calculating TAD strength vs. Length
-tad_size = zeros(1,a_size);
-tad_color = zeros(1,a_size);
-tad_index = 1;
-for i = MIN_DIAG:MAX_DIAG
-	start_pos = a_size*i + 1;
-	domains_diag_xor = zeros(1,a_size-i);
-	domains_diag_one = zeros(1,a_size-i);
-	for domain = domains'
-		domain(2) = min(domain(2),a_size); %Fix overflow
-
-		bnd_start = domain(1);
-		bnd_end = domain(2)-i;
-		min_bnd = min(bnd_start,bnd_end);
-		min_bnd = max(1, min_bnd);
-		max_bnd = max(bnd_start,bnd_end);
-		max_bnd = min(max_bnd, a_size-i);
-		domains_diag_xor(min_bnd:max_bnd) = ~domains_diag_xor(min_bnd:max_bnd);
-
-		min_bnd = max(1, bnd_start);
-		max_bnd = min(bnd_end, a_size-i);
-		domains_diag_one(min_bnd:max_bnd) = 1; %Do not extend TADs to tiles
-
-		%For calculating TAD strength vs. Length
-		tad_sum = sum(sum((a(domain(1):domain(2),domain(1):domain(2))))); %Can use log here
-		tad_count = numel(a(domain(1):domain(2),domain(1):domain(2)));
-		tad_size(tad_index) = domain(2)-domain(1);
-		tad_color(tad_index) = tad_sum/tad_count;
-		tad_index = tad_index + 1;
-	end
-	domains_map_xor(start_pos:a_size+1:end) = domains_diag_xor;
-	domains_map_one(start_pos:a_size+1:end) = domains_diag_one;
-	%domains_map(start_pos:a_size+1:end) = round(rand(1,a_size-i)); %Random model
-end
-domains_map_crs = domains_map_xor-domains_map_one; %Just TAD interactions, not TADs
-
-%Plot TAD strength vs. Length
-if 0 
-figure;
-scatter(tad_size*BLOCK_SIZE,tad_color);
-title('Mean interaction strength vs. TAD length');
-xlabel('Length (bp)');
-ylabel('Mean Interaction strength');
-set(gca,'xscale','log');
-set(gca,'yscale','log');
-coeffs = polyfit(log(tad_size*BLOCK_SIZE),log(tad_color),1);
-hold on;
-plot(tad_size*BLOCK_SIZE,((tad_size*BLOCK_SIZE).^coeffs(1))*exp(coeffs(2)));
-hold off;
-legend('Original Data',sprintf('Line Fit ax^b\r\na=%d\r\nb=%d',exp(coeffs(2)),coeffs(1)));
-end
-
-%Select the proper separation model
-domains_map = domains_map_one; %No tiles, just TADs
-bounds_map = 1-domains_map_xor; %Whatever is not tads or interactions
-a_tad = domains_map .* a_diag;
-a_bound = bounds_map .* a_diag; %For bounderies
+[a_bgmap,a_tadmap,a_crossmap] = GetTADs(chrNumber,MIN_DIAG,MAX_DIAG,a_size,BLOCK_SIZE);
+a_tad = a_tadmap .* a_diag;%No tiles, just TADs
+a_bound = a_bgmap .* a_diag; %For bounderies
+a_cross = a_crossmap .* a_diag; %Cross TAD stuff
+[pr_tad, pr_bg pr_crs] = GetPdTBC(a_diag,a_tad,a_bound,a_cross,MIN_DIAG,MAX_DIAG);%Model
 fprintf('Done\r\n');
+
+%Find gaussians
+fprintf('Gaussianing... ');
+a_gmm_tad = AnalyzeGMM(a_tad,MIN_DIAG,MAX_DIAG,1);
+a_gmm_bound = AnalyzeGMM(a_bound,MIN_DIAG,MAX_DIAG,1);
+a_gmm_cross = AnalyzeGMM(a_cross,MIN_DIAG,MAX_DIAG,1);
+meansTadDxn = zeros(size(a_gmm_tad));
+meansBgDxn = zeros(size(a_gmm_bound));
+meansCrsDxn = zeros(size(a_gmm_cross));
+sigmaTadDxn = zeros(size(a_gmm_tad));
+sigmaBgDxn = zeros(size(a_gmm_bound));
+sigmaCrsDxn = zeros(size(a_gmm_cross));
+for i = 1:numel(a_gmm_tad)
+	meansTadDxn(i) = a_gmm_tad{i}.mu(1);
+	meansBgDxn(i) = a_gmm_bound{i}.mu(1);
+	meansCrsDxn(i) = a_gmm_cross{i}.mu(1);
+	sigmaTadDxn(i) = a_gmm_tad{i}.Sigma(1);
+	sigmaBgDxn(i) = a_gmm_bound{i}.Sigma(1);
+	sigmaCrsDxn(i) = a_gmm_cross{i}.Sigma(1);
+end
+fprintf('Done\r\n');
+
+if 0 %Print Mean & Sigma for Dixon
+x_vals = (MIN_DIAG:MAX_DIAG)*BLOCK_SIZE;
+figure;
+hold on;
+loglog(x_vals,meansTadDxn,'rx-','LineWidth',2);
+loglog(x_vals,meansBgDxn,'bx-','LineWidth',2);
+loglog(x_vals,meansCrsDxn,'gx-','LineWidth',2);
+legend('Tad','Bound','Cross');
+loglog(x_vals,meansTadDxn+sigmaTadDxn,'r--');
+loglog(x_vals,meansTadDxn-sigmaTadDxn,'r--');
+loglog(x_vals,meansBgDxn+sigmaBgDxn,'b--');
+loglog(x_vals,meansBgDxn-sigmaBgDxn,'b--');
+loglog(x_vals,meansCrsDxn+sigmaCrsDxn,'g--');
+loglog(x_vals,meansCrsDxn-sigmaCrsDxn,'g--');
+title('Mean vs. Distance');
+xlabel('Distance (bp)');
+ylabel('Mean');
+fprintf('Done\r\n');
+end
+
+%Generate GMM data
+if 0
+	TryTripleGMM(a_diag,MIN_DIAG,MAX_DIAG);
+end
+
+%Generate & Parse 2 GMM data
+if 0
+fprintf('GMMing (2 Param)... ');
+a_gmm = AnalyzeGMM(a_diag,MIN_DIAG,MAX_DIAG,2); %CACH THIS WOWZER LIKE NORMALIZE DWAG YEH
+%I mean cache the results of this long calculation
+[meansBg, meansIn, sigmaBg, sigmaIn, probBg, probIn] = ParseGM(a_gmm, true);
+fprintf('Done\r\n');
+end
+
+%Get P_D_T(N) and P_D_B(N)
+if 1
+%Smooth data before continuing
+%meansBg = smooth(meansBg);
+%meansIn = smooth(meansIn);
+%sigmaBg = smooth(sigmaBg);
+%sigmaIn = smooth(sigmaIn);
+
+%box = 1300:1800; %chr5
+%box = 1100:1700; %chr3
+box = 400:a_size;
+[a_llr,a_pdt,a_pdb] = PosteriorHeatmap(a_diag,MIN_DIAG,MAX_DIAG,pr_bg,meansBgDxn,sigmaBgDxn,pr_tad,meansTadDxn,sigmaTadDxn);
+%[a_llr,a_pdt,a_pdb] = PosteriorHeatmap(a_diag,MIN_DIAG,MAX_DIAG,probBg,meansBg,sigmaBg,probIn,meansIn,sigmaIn);
+DisplayHeatmap( triu(a_pdt) + tril(a_pdb') , [0 1] , box );
+title(sprintf('Pd(TAD) & Pd(BG), chr%d',chrNumber));
+DisplayHeatmap( triu(a_llr) + tril(a_tadmap' + a_crossmap') , [-3 3], box);
+title(sprintf('Logaritmic liklyhood ratio, chr%d',chrNumber));
+%figure;imagesc(a_pdt);axis equal;colorbar;
+%figure;imagesc(a_pdb);axis equal;colorbar;
+%figure;imagesc(a_unified);axis equal;colorbar;
+fprintf('Logaritmic Liklyhooding... ');
+a_ret = PyramidSky(a_llr,-a_llr,MAX_DIAG,10);
+a_log_diag = log(a_diag+1);
+a_log_diag = max(a_ret(:))*(a_log_diag-min(a_log_diag(:)))/(max(a_log_diag(:))-min(a_log_diag(:)))+min(a_ret(:));
+%DisplayHeatmap(triu(a_ret) + tril(a_log_diag'),[min(a_ret(:)) max(a_ret(:))], box);
+title(sprintf('LLR vs. log(heatmap), chr%d',chrNumber));
+fprintf('Done!\r\n');
+DynProgTAD(a_ret,box(1),box(end));
+end
+
+%Plot PdT, pdB, pdC
+if 0
+x_vals = (MIN_DIAG:MAX_DIAG)*BLOCK_SIZE;
+figure; hold on;
+plot(x_vals,pr_tad);
+plot(x_vals,pr_bg);
+plot(x_vals,pr_crs);
+legend('TAD','Bg','Cross');
+xlabel('Distance (bp)');
+ylabel('Prob');
+title(sprintf('Pr(TAD), Pr(Bg), Pr(Cross) vs. Distance, for chr %d',chrNumber));
+end
 
 %Extract probability for TAD diagonals only
 if 0
 figure;
 iplt = 1;
 for i = [2,5,10,20,30,45]
-	dgn = diag(a_tad,i);
-	dgn_clean = dgn(dgn~=0);
-	dgn_clean = log(dgn_clean+1);
-	[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
-
 	subplot(2,3,iplt);
-	scatter(xi,f,11,'filled');
 	hold on;
 
-	dgn = diag(a_bound,i);
-	dgn_clean = dgn(dgn~=0);
-	dgn_clean = log(dgn_clean+1);
-	[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
+	dgn_clean = GetDiag(a_tad,i,1,1,1,0);
+	if numel(dgn_clean) > 0
+		[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
+		h = qqplot(dgn_clean);
+		set(h(3),'linewidth',1,'color',[0 0 1]);
+		set(h(2),'linewidth',1,'color',[0 0 1]);
+		set(h(1),'marker','^','markersize',8,'markeredgecolor',[0 0 1]);
+		%scatter(xi,f,11,'filled');
+	end
 
-	scatter(xi,f,11,'filled');
+	dgn_clean = GetDiag(a_bound,i,1,1,1,0);
+	if numel(dgn_clean) > 0
+		[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
+		h = qqplot(dgn_clean);
+		set(h(3),'linewidth',1,'color',[0 1 0]);
+		set(h(2),'linewidth',1,'color',[0 1 0]);
+		set(h(1),'marker','^','markersize',8,'markeredgecolor',[0 1 0]);
+		%scatter(xi,f,11,'filled');
+	end
+
+	dgn_clean = GetDiag(a_cross,i,1,1,1,0);
+	if numel(dgn_clean) > 0
+		[f,xi] = ksdensity(dgn_clean,dgn_clean,'function','pdf');
+		h = qqplot(dgn_clean);
+		set(h(3),'linewidth',1,'color',[1 0 0]);
+		set(h(2),'linewidth',1,'color',[1 0 0]);
+		set(h(1),'marker','^','markersize',8,'markeredgecolor',[1 0 0]);
+		%scatter(xi,f,11,'filled');
+	end
+
 	title(sprintf('Distance=%d (i=%d)',i*BLOCK_SIZE,i));
-	legend('intra-domains','bounderies');
 	iplt = iplt+1;
 end
+hb = plot(nan,nan,'.b');
+hg = plot(nan,nan,'.g');
+hr = plot(nan,nan,'.r');
+legend([hb hg hr],'tad','bg','cross');
 suptitle('Probability density of interactions strength, for several diagonals');
 end
 
-%QQPlots for several diags
-if 0
-dgn = diag(a_bound,2);
-dgn = dgn(dgn~=0);
-figure;qqplot(log(dgn+1));title('qq plot, bound, 80k');
-dgn = diag(a_tad,2);
-dgn = dgn(dgn~=0);
-figure;qqplot(log(dgn+1));title('qq plot, tad, 80k');
-dgn = diag(a_tad,20);
-dgn = dgn(dgn~=0);
-figure;qqplot(log(dgn+1));title('qq plot, tad, 800k');
-end
-
-%Plot Public TAD mapping & Original image
-dispbox = 1200:1400;%1:a_size;
-if 1
-a_diag_disp = triu(log(a_diag))+tril(domains_map_one' + domains_map_xor');
-a_diag_disp = a_diag_disp(dispbox,dispbox);
-figure; imagesc(a_diag_disp); axis equal; colorbar; caxis([0 8]);
-title('log(Heatmap) vs. Dixon TAD Mapping');
-end
-
-if 1
-a_unif_disp = triu(a_unified)+tril(domains_map_one' + domains_map_xor');
-a_unif_disp = a_unif_disp(dispbox,dispbox);
-figure; imagesc(a_unif_disp); colorbar; axis equal; caxis([-3 3]); 
-title('logPrTAD - logPrBackground vs. Dixon TAD Mapping');
-end
-
-%a_ret = (domains_map).*a_diag + a_diag'; return;
-%a_ret = a_diag; return;
-a_ret = a_gmm; return;
-
-%Used for rotated stuff. May use log here
-a_display = a_diag;
-
-%Calculte forward probability
-%This works because all other are one's, and we have only positive diagonals
-Pf = sum(log(a_prob),2); %row sum
-Pb = sum(log(a_prob),1)'; %col sum
-
-%plot(1:size(Pf),Pf,1:size(Pb),Pb);
-%return
-
-%Do Directionality index analisys
-A = sum(a_diag,2);
-B = sum(a_diag,1)';
-E = (A+B)/2;
-DI0 = ( (B-A)./abs(B-A) ) .* ( ((A-E).^2)./E + ((B-E).^2)./E );
-DI1 = smooth(DI0,10); DI=DI1;%1
-DI(DI>DI_TRIM)=DI_TRIM;
-DI(DI<-DI_TRIM)=-DI_TRIM;
-DI_SEQ = round(2*DI/DI_TRIM) + 3;
-DI_SEQ(isnan(DI_SEQ)) = 3;
-
-for i = 1:100
-	likelystates = hmmviterbi(DI_SEQ, TRANS_GUESS, EMIS_GUESS);
-	[TRANS_GUESS, EMIS_GUESS] = hmmestimate(DI_SEQ,likelystates);
-end
-
-
-%Prepare vectors for displaying
-a_rot = imrotate(a_display,45);
-a_width = size(a_rot,1);
-diag_height = (MAX_DIAG-MIN_DIAG)/(2*sqrt(2));
-
-di_plt = interp1(DI,linspace(1,numel(DI),a_width));
-di_plt = (di_plt/max(di_plt(:)))*diag_height+(a_width/2+diag_height);
-
-di_ref_x = [0 a_width];
-di_ref_y = [a_width/2+diag_height a_width/2+diag_height];
-
-di_likelystates = round(interp1(likelystates,linspace(1,numel(likelystates),a_width))-2)*diag_height + a_width/2 + diag_height;
-
-%Plot forward/backword probability estimates
-%normalize with the same maximum!
-di_pf = interp1(Pf,linspace(1,numel(DI),a_width));
-di_pf = smooth(di_pf,10);
-di_pb = interp1(Pb,linspace(1,numel(DI),a_width));
-di_pb = smooth(di_pb,10);
-
-pf_norm = max(di_pf);
-
-di_pf = di_pf/pf_norm*15*diag_height + (a_width/2-15*diag_height);
-di_pb = di_pb/pf_norm*15*diag_height + (a_width/2-15*diag_height);
-
-imagesc(a_rot);
-colorbar;
-axis equal;
-hold on;
-plot(di_plt,'Color','w','LineStyle','-');
-plot(di_ref_x,di_ref_y,'Color','w','LineStyle',':');
-plot(di_likelystates,'Color','r','LineStyle','-');
-%plot(di_pf,'Color',[1 0 0],'LineStyle','-');
-%plot(di_pb,'Color',[0 1 0],'LineStyle','-');
-
-% 3 = down, 2 = no, 1 = up
-% Looking for 3->1 transitions. Mark all 2's along the way
-[startIdx,endIdx] = regexp(char(likelystates+48),'32*1');
-a = zeros(size(likelystates));
-for range = [startIdx; endIdx],
-	a(range(1):range(2))=1;
-end
-plot((interp1(a,linspace(1,numel(likelystates),a_width))-2)*diag_height + a_width/2 - 0*diag_height,'Color','w','LineStyle','-');
-
-hold off;
 end
