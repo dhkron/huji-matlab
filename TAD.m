@@ -8,24 +8,25 @@ BLOCK_SIZE = 40000;
 a_ret = 0;
 
 %Load
-fprintf('Loading... ');
+Log('Loading');
 a=load(DATA_FILE);
 a_size = size(a,1);
-fprintf('Done\r\n');
+Log();
 
 %Normalize
 %% The problematic cells are killed by b, having inf in their location!
 %% Any following code MUST drop zero value cells.
 %% This also kills other zeros cells
-fprintf('Normalizing... ');
+Log('Normalizing');
 norm_vec_filename = sprintf('HiC-CSV-Matrices/normalization_vector_IMR90_chr%d_40k.mat', chrNumber);
 if exist(norm_vec_filename,'file')
-	fprintf('Norm vector found... ');
+	fprintf('Norm vector found');
+
 	load(norm_vec_filename,'b');
 else
-	fprintf('Recalculating norm vector... ');
+	fprintf('Recalculating norm vector');
 	b = Normalize(a);
-	fprintf('Saving to dist... ');
+	fprintf('Saving to dist');
 	save(norm_vec_filename,'b');
 end
 a = a ./ (b'*b);
@@ -35,32 +36,32 @@ a = a ./ (b'*b);
 % a_clean = a(ind,ind)
 % a_orig(ind,ind) = a_clean
 % When removing, TAD structure is curios as well...
-fprintf('Done\r\n');
+Log();
 
 if 0 %Normalize with evil unethical method
-	fprintf('Equalizing Spectrum...')
+	Log('Equalizing Spectrum...');
 	a_eq = EqualizeSpectrum(a,MIN_DIAG,MAX_DIAG);
-	fprintf('Done\r\n');
+	Log();	
 end
 %a_ret = a; return;
 
 %Trim diagonal
-fprintf('Creating diag matrix... ');
+Log('Creating diag matrix');
 clear_diag = triu(tril(ones(size(a)),MAX_DIAG),MIN_DIAG);
 a_diag = a .* clear_diag;
-fprintf('Done\r\n');
+Log();
 
 %Use public TAD data to extract intraTAD stuff
-fprintf('Extracting TADs... ');
+Log('Extracting TADs');
 [a_bgmap,a_tadmap,a_crossmap] = GetTADs(chrNumber,MIN_DIAG,MAX_DIAG,a_size,BLOCK_SIZE);
 a_tad = a_tadmap .* a_diag;%No tiles, just TADs
 a_bound = a_bgmap .* a_diag; %For bounderies
 a_cross = a_crossmap .* a_diag; %Cross TAD stuff
 [pr_tad, pr_bg pr_crs] = GetPdTBC(a_diag,a_tad,a_bound,a_cross,MIN_DIAG,MAX_DIAG);%Model
-fprintf('Done\r\n');
+Log();
 
 %Find gaussians
-fprintf('Gaussianing... ');
+Log('Gaussianing');
 a_gmm_tad = AnalyzeGMM(a_tad,MIN_DIAG,MAX_DIAG,1);
 a_gmm_bound = AnalyzeGMM(a_bound,MIN_DIAG,MAX_DIAG,1);
 a_gmm_cross = AnalyzeGMM(a_cross,MIN_DIAG,MAX_DIAG,1);
@@ -78,7 +79,7 @@ for i = 1:numel(a_gmm_tad)
 	sigmaBgDxn(i) = a_gmm_bound{i}.Sigma(1);
 	sigmaCrsDxn(i) = a_gmm_cross{i}.Sigma(1);
 end
-fprintf('Done\r\n');
+Log();
 
 if 0 %Print Mean & Sigma for Dixon
 x_vals = (MIN_DIAG:MAX_DIAG)*BLOCK_SIZE;
@@ -107,11 +108,11 @@ end
 
 %Generate & Parse 2 GMM data
 if 0
-fprintf('GMMing (2 Param)... ');
+Log('GMMing (2 Param)');
 a_gmm = AnalyzeGMM(a_diag,MIN_DIAG,MAX_DIAG,2); %CACH THIS WOWZER LIKE NORMALIZE DWAG YEH
 %I mean cache the results of this long calculation
 [meansBg, meansIn, sigmaBg, sigmaIn, probBg, probIn] = ParseGM(a_gmm, true);
-fprintf('Done\r\n');
+Log();
 end
 
 %Get P_D_T(N) and P_D_B(N)
@@ -123,25 +124,31 @@ if 1
 %sigmaIn = smooth(sigmaIn);
 
 %box = 1300:1800; %chr5
-%box = 1100:1700; %chr3
+box = 1100:1700; %chr3
 box = 400:a_size;
+
 [a_llr,a_pdt,a_pdb] = PosteriorHeatmap(a_diag,MIN_DIAG,MAX_DIAG,pr_bg,meansBgDxn,sigmaBgDxn,pr_tad,meansTadDxn,sigmaTadDxn);
 %[a_llr,a_pdt,a_pdb] = PosteriorHeatmap(a_diag,MIN_DIAG,MAX_DIAG,probBg,meansBg,sigmaBg,probIn,meansIn,sigmaIn);
-DisplayHeatmap( triu(a_pdt) + tril(a_pdb') , [0 1] , box );
-title(sprintf('Pd(TAD) & Pd(BG), chr%d',chrNumber));
+
+%DisplayHeatmap( triu(a_pdt) + tril(a_pdb') , [0 1] , box );
+%title(sprintf('Pd(TAD) & Pd(BG), chr%d',chrNumber));
+
 DisplayHeatmap( triu(a_llr) + tril(a_tadmap' + a_crossmap') , [-3 3], box);
 title(sprintf('Logaritmic liklyhood ratio, chr%d',chrNumber));
-%figure;imagesc(a_pdt);axis equal;colorbar;
-%figure;imagesc(a_pdb);axis equal;colorbar;
-%figure;imagesc(a_unified);axis equal;colorbar;
-fprintf('Logaritmic Liklyhooding... ');
-a_ret = PyramidSky(a_llr,-a_llr,MAX_DIAG,10);
+
+Log('Logaritmic Liklyhooding');
+a_pyrsky = PyramidSky(a_llr,-a_llr,MAX_DIAG,2);
+Log();
+
+Log('Deriving TADs from matrix');
+a_ret = DynProgTAD(a_pyrsky,box(1),box(end));
+Log();
+
 a_log_diag = log(a_diag+1);
-a_log_diag = max(a_ret(:))*(a_log_diag-min(a_log_diag(:)))/(max(a_log_diag(:))-min(a_log_diag(:)))+min(a_ret(:));
-%DisplayHeatmap(triu(a_ret) + tril(a_log_diag'),[min(a_ret(:)) max(a_ret(:))], box);
+a_log_diag = max(a_pyrsky(:))*(a_log_diag-min(a_log_diag(:)))/(max(a_log_diag(:))-min(a_log_diag(:)))+min(a_pyrsky(:));
+%DisplayHeatmap(triu(a_pyrsky) + tril(a_log_diag'),[min(a_pyrsky(:)) max(a_pyrsky(:))], box);
 title(sprintf('LLR vs. log(heatmap), chr%d',chrNumber));
-fprintf('Done!\r\n');
-DynProgTAD(a_ret,box(1),box(end));
+
 end
 
 %Plot PdT, pdB, pdC
