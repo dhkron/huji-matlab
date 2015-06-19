@@ -16,17 +16,23 @@ for i = MIN_DIAG:MAX_DIAG
 	a_pdb(start_pos:a_size+1:end) = pdb_diag;
 end
 
-	a_pdsum = a_pdt + a_pdb;
-	a_pdt = a_pdt ./ a_pdsum;
-	a_pdb = a_pdb ./ a_pdsum;
-	a_pdt(isnan(a_pdt)) = 0;
-	a_pdb(isnan(a_pdt)) = 0;
-	a_llr = log2(a_pdt)-log2(a_pdb); %rename LLR
-	a_llr(isnan(a_llr)) = 0;
+a_pdsum = a_pdt + a_pdb; %Is any of this needed?
+%for i=MIN_DIAG:MAX_DIAG
+%	start_pos = a_size*i + 1;
+%	mn = mean(diag(a_pdsum,i));
+%	a_pdsum(start_pos:a_size+1:end) = mn;
+%end
 
-	if exist('box','var')
-		a_pdt = a_pdt(box,box);
-		a_pdb = a_pdb(box,box);
-		a_llr = a_llr(box,box);
-	end
+a_pdt = a_pdt ./ a_pdsum;
+a_pdb = a_pdb ./ a_pdsum;
+a_pdt(isnan(a_pdt)) = 0;
+a_pdb(isnan(a_pdt)) = 0;
+a_llr = log2(a_pdt)-log2(a_pdb); %Why log2?
+a_llr(isnan(a_llr)) = 0;
+
+if exist('box','var')
+	a_pdt = a_pdt(box,box);
+	a_pdb = a_pdb(box,box);
+	a_llr = a_llr(box,box);
+end
 end

@@ -30,7 +30,7 @@ if exist('doPlot','var') && doPlot
 	hold on;
 	plot(tad_size*BLOCK_SIZE,((tad_size*BLOCK_SIZE).^coeffs(1))*exp(coeffs(2)));
 	hold off;
-	legend('Original Data',sprintf('Line Fit ax^b\r\na=%d\r\nb=%d',exp(coeffs(2)),coeffs(1)));
+	legend('Original Data',sprintf('Line Fit ae^b\r\na=%d\r\nb=%d',exp(coeffs(2)),coeffs(1)));
 end
 
 end

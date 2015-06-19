@@ -8,7 +8,7 @@ function dgn = GetDiag(a,i,cleanNan,clearZero,doLog,addOne)
 	end
 	if doLog
 		if addOne
-			dgn = log(dgn+1);
+			dgn = log(dgn+1); % This is ln a not log because: X lognormal => Y = lnX is normal
 		else
 			dgn = log(dgn);
 		end

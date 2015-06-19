@@ -1,4 +1,4 @@
-function supermap = PyramidSky(a_t,a_b,h,m)
+function [supermap,pyrIsTad,skyAreBlue] = PyramidSky(a_t,a_b,h,m)
 %Returns 2D ma_tirx L
 % L(i,j) = sum( llr(pyramid is tad) + llr(sky are background) )
 
@@ -16,6 +16,8 @@ skyAreBlue = LlrColumns(a_bg,2*h)-LlrPyramid(a_bg,2*h);
 pyrIsTad = LlrPyramid(a_tad,2*h);
 
 supermap = pyrIsTad + skyAreBlue;
+%supermap = skyAreBlue;
+%supermap = pyrIsTad;
 
 % /Begin normalization
 % The dynamic programming algoritm makes this redundent I think	

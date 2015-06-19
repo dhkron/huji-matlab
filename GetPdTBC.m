@@ -3,9 +3,7 @@ pr_tad = zeros(1,numel(MIN_DIAG:MAX_DIAG));
 pr_bg = zeros(1,numel(MIN_DIAG:MAX_DIAG));
 pr_crs = zeros(1,numel(MIN_DIAG:MAX_DIAG));
 for i = MIN_DIAG:MAX_DIAG
-	%dgn = diag(a,i);
-	%dgn(isnan(dgn)) = 0;
-	%norm = sum(dgn~=0);
+	%cleanNan, cleanZero. NO LOG
 	dgn = GetDiag(a,i,1,1,0,0);
 	norm = sum(dgn);
 	dgn = GetDiag(a_t,i,1,1,0,0);
