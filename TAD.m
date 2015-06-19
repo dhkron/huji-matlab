@@ -137,17 +137,27 @@ DisplayHeatmap( triu(a_llr) + tril(a_tadmap' + a_crossmap') , [-3 3], box);
 title(sprintf('Logaritmic liklyhood ratio, chr%d',chrNumber));
 
 Log('Logaritmic Liklyhooding');
-a_pyrsky = PyramidSky(a_llr,-a_llr,MAX_DIAG,2);
+[a_pyrsky, a_pyr, a_sky] = PyramidSky(a_llr,-a_llr,MAX_DIAG,2);
 Log();
 
 Log('Deriving TADs from matrix');
-a_ret = DynProgTAD(a_pyrsky,box(1),box(end));
+[a_t_mp, a_t_sl] = DynProgTAD(a_pyrsky,box(1),box(end),a_pyr);
+a_ret = zeros(size(box,2),size(box,2),2);
+a_ret(:,:,1) = a_t_mp;
+a_ret(:,:,2) = a_t_sl;
 Log();
 
 a_log_diag = log(a_diag+1);
 a_log_diag = max(a_pyrsky(:))*(a_log_diag-min(a_log_diag(:)))/(max(a_log_diag(:))-min(a_log_diag(:)))+min(a_pyrsky(:));
 %DisplayHeatmap(triu(a_pyrsky) + tril(a_log_diag'),[min(a_pyrsky(:)) max(a_pyrsky(:))], box);
 title(sprintf('LLR vs. log(heatmap), chr%d',chrNumber));
+
+%Here can do also -
+% rng = [453, 509];
+% asum = rng(1):rng(2); for i=rng(1):rng(2) vl=a(rng(1),i)+a(i+1,rng(2)); asum(i-rng(1)+1)=vl; end; end;
+% figure; plot(asum); title(sprintf('%d-%d, chr%d',rng(1),rng(2),chrNumber));
+
+%Also, add cost parameter to DynProgTAD. Then find tad solutions for changing cost values
 
 end
 

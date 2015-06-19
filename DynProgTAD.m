@@ -1,5 +1,6 @@
-function [dynmap, dynsol] = DynProgTAD(supermapraw,s,e)
+function [dynmap, dynsol] = DynProgTAD(supermapraw,s,e, pyrraw)
 supermap = supermapraw(s:e,s:e);
+pyr = pyrraw(s:e,s:e);
 dynmap = zeros(size(supermap));
 dynsol = zeros(size(supermap));
 
@@ -27,6 +28,7 @@ for dg = 0:a_size
 			for mid = i:j-1
 				flipj = a_size+1-j;
 				v = dynmap(i,mid) + dynmap(mid+1,j);
+				%v = v + 10*(j-i)*( - pyr(i,j) + pyr(i,mid) + pyr(mid+1,j) );
 				% + Interaction square value?
 				% How does -100 affect the structure?
 				%If I add a measure of the cross-tad interaction?
@@ -44,7 +46,7 @@ end
 %figure; imagesc(dynmap); axis equal; colorbar;
 
 disp('Finished! Printing solution...')
-printSolution(dynsol,1,e-s+1,0);%offset = s-1
+printSolution(dynsol,1,e-s+1,0); %offset=s-1
 fprintf('\r\n');
 
 end
