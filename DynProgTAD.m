@@ -83,8 +83,8 @@ function [dynmsk] = printSolution(dynsol,s,e,offset)
 			end
 		else
 			dynmsk(current) = 1;
-			q.add([i current]);
-			q.add([current+1 j]);
+			q.push([current+1 j]);
+			q.push([i current]);
 		end
 	end
 end
