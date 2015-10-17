@@ -12,8 +12,16 @@ a_bg = fliplr(a_b .* clr);
 %pyrm = LlrPyramid(a_tad,h);
 %clmn = LlrColumns(a_tad,h);
 
-skyAreBlue = LlrColumns(a_bg,2*h)-LlrPyramid(a_bg,2*h);
-pyrIsTad = LlrPyramid(a_tad,2*h);
+if sum(size(a_b)) == 2
+	skyAreBlue = 0;
+else
+	skyAreBlue = LlrColumns(a_bg,2*h)-LlrPyramid(a_bg,2*h);
+end
+if sum(size(a_t)) == 2
+	pyrIsTad = 0;
+else
+	pyrIsTad = LlrPyramid(a_tad,2*h);
+end
 
 supermap = pyrIsTad + skyAreBlue;
 %supermap = skyAreBlue;
@@ -26,16 +34,17 @@ if 0
 	for i=1:a_size
 		for j=1:a_size
 			j2 = a_size+1-j;
-			nrm = 0.5*(i+j2-a_size-1)^2+1;
-			nrm2 = h*abs(i+j2-a_size-1);
-			pyrIsTad(i,j) = pyrIsTad(i,j)/nrm;
-			skyAreBlue(i,j) = skyAreBlue(i,j)/nrm2;
+			%nrm = 0.5*(i+j2-a_size-1)^2+1;
+			%nrm2 = h*abs(i+j2-a_size-1);
+			%pyrIsTad(i,j) = pyrIsTad(i,j)/nrm;
+			%skyAreBlue(i,j) = skyAreBlue(i,j)/nrm2;
+			%supermap(i,j) = supermap(i,j)/(abs(i-j)+1);
 		end
 	end
 
-	supermap = pyrIsTad + skyAreBlue;
-	supermap(isnan(supermap)) = 0;
-	supermap(isinf(supermap)) = 0;
+	%supermap = pyrIsTad + skyAreBlue;
+	%supermap(isnan(supermap)) = 0;
+	%supermap(isinf(supermap)) = 0;
 end
 % /End of normalization
 return

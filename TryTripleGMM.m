@@ -17,10 +17,10 @@ end
 figure;
 for i = MIN_DIAG:MAX_DIAG
 	x = i*BLOCK_SIZE;
-	loglog(x,a_gmm{i}.Sigma(1),'*r');
+	loglog(x,sqrt(a_gmm{i}.Sigma(1)),'*r');
 	hold on;%for loglog
-	loglog(x,a_gmm{i}.Sigma(2),'*g');
-	loglog(x,a_gmm{i}.Sigma(3),'*b');
+	loglog(x,sqrt(a_gmm{i}.Sigma(2)),'*g');
+	loglog(x,sqrt(a_gmm{i}.Sigma(3)),'*b');
 	title('Sigma'); xlabel('Distance (bp)');
 end
 figure; hold on;

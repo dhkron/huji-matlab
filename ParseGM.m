@@ -16,8 +16,8 @@ for i_cell = 1:numel(a)
 	end
 	meansBg(i_cell) = db.mu(i_bg);
 	meansIn(i_cell) = db.mu(i_in);
-	sigmaBg(i_cell) = db.Sigma(i_bg);
-	sigmaIn(i_cell) = db.Sigma(i_in);
+	sigmaBg(i_cell) = sqrt(db.Sigma(i_bg));
+	sigmaIn(i_cell) = sqrt(db.Sigma(i_in));
 	probBg(i_cell) = db.ComponentProportion(i_bg);
 	probIn(i_cell) = db.ComponentProportion(i_in);
 end % Loop

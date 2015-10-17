@@ -1,11 +1,14 @@
-function [dynmap, dynsol] = DynProgTAD(supermapraw,s,e, pyrraw)
+function [dynmap, dynsol, dynmsk] = DynProgTAD(supermapraw,s,e,cost,c_dynmsk)
 supermap = supermapraw(s:e,s:e);
-pyr = pyrraw(s:e,s:e);
 dynmap = zeros(size(supermap));
 dynsol = zeros(size(supermap));
+dynmsk = ones(1,size(supermap,1));%Will hold 1 for 'allowed' boundary solutions
 
 supermapfl = fliplr(supermap);
 
+if ~exist('c_dynmsk','var')
+	c_dynmsk = ones(1,size(supermap,1));
+end
 %perms = {};
 %for i=1:(e-s+1)
 %	perms{i} = randperm(i);
@@ -26,9 +29,11 @@ for dg = 0:a_size
 			%rng = rng(perms{numel(rng)});
 			%for mid = rng
 			for mid = i:j-1
+				if c_dynmsk(mid) == 0
+					continue;
+				end
 				flipj = a_size+1-j;
-				v = dynmap(i,mid) + dynmap(mid+1,j);
-				%v = v + 10*(j-i)*( - pyr(i,j) + pyr(i,mid) + pyr(mid+1,j) );
+				v = dynmap(i,mid) + dynmap(mid+1,j) - cost;
 				% + Interaction square value?
 				% How does -100 affect the structure?
 				%If I add a measure of the cross-tad interaction?
@@ -64,13 +69,13 @@ function printSolution(dynsol,i,j,offset)
 			plot([ax(1),ax(2)],[j,j],'r-.');
 			xp = [i i j j];
 			yp = [i j j i];
-			patch(xp,yp,'magenta','FaceAlpha',0.25,'EdgeColor','none');
+			%patch(xp,yp,'magenta','FaceAlpha',0.1,'EdgeColor','none');
 		end
 	else
-		fprintf('( ')
+		%fprintf('( ')
 		printSolution(dynsol,i,current,offset);
-		fprintf(' , ')
+		fprintf(' ')
 		printSolution(dynsol,current+1,j,offset);
-		fprintf(' )')
+		%fprintf(' )')
 	end
 end
