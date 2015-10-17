@@ -2,7 +2,7 @@ function [dynmap, dynsol, dynmsk] = DynProgTAD(supermapraw,s,e,cost,c_dynmsk)
 supermap = supermapraw(s:e,s:e);
 dynmap = zeros(size(supermap));
 dynsol = zeros(size(supermap));
-dynmsk = ones(1,size(supermap,1));%Will hold 1 for 'allowed' boundary solutions
+dynmsk = zeros(1,size(supermap,1));%Will hold 1 for 'allowed' boundary solutions
 
 supermapfl = fliplr(supermap);
 
@@ -51,31 +51,40 @@ end
 %figure; imagesc(dynmap); axis equal; colorbar;
 
 disp('Finished! Printing solution...')
-printSolution(dynsol,1,e-s+1,0); %offset=s-1
+dynmsk = printSolution(dynsol,1,e-s+1,0); %offset=s-1
 fprintf('\r\n');
 
 end
 
-function printSolution(dynsol,i,j,offset)
-	current = dynsol(i,j);
-	if current == 0
-		fprintf('%d-%d',i+offset,j+offset)
-		if abs(i-j) > 5
-			hold on;
-			ax = axis;
-			plot([i,i],[ax(3),ax(4)],'b--');
-			plot([ax(1),ax(2)],[i,i],'b--');
-			plot([j,j],[ax(3),ax(4)],'r-.');
-			plot([ax(1),ax(2)],[j,j],'r-.');
-			xp = [i i j j];
-			yp = [i j j i];
-			%patch(xp,yp,'magenta','FaceAlpha',0.1,'EdgeColor','none');
+function [dynmsk] = printSolution(dynsol,s,e,offset)
+	dynmsk = zeros(1,e);%Will hold 1 for 'allowed' boundary solutions
+
+	import java.util.LinkedList;
+	q = LinkedList();
+	q.add([s,e]);
+	while q.size()>0
+		item = q.remove();
+		i = item(1);
+		j = item(2);
+		current = dynsol(i,j);
+		if current == 0
+			%Do printin and add to mask
+			fprintf('%d-%d ',i+offset,j+offset)
+			if abs(i-j) > 5
+				hold on;
+				ax = axis;
+				plot([i,i],[ax(3),ax(4)],'b--');
+				plot([ax(1),ax(2)],[i,i],'b--');
+				plot([j,j],[ax(3),ax(4)],'r-.');
+				plot([ax(1),ax(2)],[j,j],'r-.');
+				xp = [i i j j];
+				yp = [i j j i];
+				%patch(xp,yp,'magenta','FaceAlpha',0.1,'EdgeColor','none');
+			end
+		else
+			dynmsk(current) = 1;
+			q.add([i current]);
+			q.add([current+1 j]);
 		end
-	else
-		%fprintf('( ')
-		printSolution(dynsol,i,current,offset);
-		fprintf(' ')
-		printSolution(dynsol,current+1,j,offset);
-		%fprintf(' )')
 	end
 end
