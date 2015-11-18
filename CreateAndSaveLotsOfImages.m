@@ -57,16 +57,15 @@ function [] = CreateAndSaveLotsOfImages(res,pixels_in_image)
 				%Add hierarchy layer and save
 				TadTree(d1,s,find(d3),box(1),box(end),llr,-llr);
 				title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',tp{1},i,box(1),box(end)));
-				
+			
+				%Update labels. LABELS MUST BE UPDATED AFTER ***LAST*** CHANGE TO GRAPH	
 				newlbl = get(gca,'XTickLabel');
-				%newlbl{end+1} = num2str(2*str2num(newlbl{end})-str2num(newlbl{end-1}));
 				for q = 1:numel(newlbl)
 					newlbl{q} = num2str((str2num(newlbl{q})+box(1)-1)*(res/1e6));
 				end
 				set(gca,'XTickLabel',newlbl);
 				xlabel('in megabase');
 				newlbl = get(gca,'YTickLabel');
-				%newlbl{end+1} = num2str(2*str2num(newlbl{end})-str2num(newlbl{end-1}));
 				for q = 1:numel(newlbl)
 					newlbl{q} = num2str((str2num(newlbl{q})+box(1)-1)*(res/1e6));
 				end

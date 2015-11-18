@@ -29,6 +29,9 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		d1 = d(s1,e1);
 		d2 = d(s2,e2);
 		sv = s(s1+offset,e2+offset);
+		if sv == 0
+			sv = ExtendSupersum(s1+offset,e2+offset,a_t,a_b);
+		end
 		mdiff = d1+d2-sv;
 		bound_matrix(i,:) = [s1 ,e1, s2, e2, d1,d2,sv,mdiff];
 	
@@ -43,7 +46,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
 		textDraw{end+1} = [e2 s2 0];
 	end
-	%bound_matrix
+	bound_matrix
 
 	mergeNumber = 1;
 	while size(bound_matrix,1)>1
@@ -55,8 +58,8 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		%First, find the minimal merge
 		for i = 1:sz
 			tmerge_cost = bound_matrix(i,8);
-			m_d1 = bound_matrix(i,2)-bound_matrix(i,1);
-			m_d2 = bound_matrix(i,4)-bound_matrix(i,1);
+			m_d1 = bound_matrix(i,2)-bound_matrix(i,1)+1;
+			m_d2 = bound_matrix(i,4)-bound_matrix(i,3)+1;
 
 			%Calculate amount of pixels in rectangle that are calculated with true LLR
 			%LLR height = H
@@ -72,7 +75,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 			S = S0 - (bigTrBase^2 - smallTrBase1^2 - smallTrBase2^2)/2; %/2 cause triangle
 			tmerge_cost = tmerge_cost / S;
 			%fprintf('%d-%d\t| %d-%d \t| %.1f\t| %.1f\t| %.1f\n',s1,e1,s2,e2,d_1+d_2,s_v,tmerge_cost);
-			if tmerge_cost < min_diff && abs(bound_matrix(i,1)-bound_matrix(i,4)) < maxMerge && max(m_d1,m_d2) > 5
+			if tmerge_cost < min_diff && abs(m_d1+m_d2) < maxMerge && max(m_d1,m_d2) > 5
 				min_diff = tmerge_cost;
 				min_diff_s = bound_matrix(i,1);
 				min_diff_e = bound_matrix(i,4);
@@ -135,7 +138,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		mergeNumber = mergeNumber + 1;
 
 		bound_matrix = removerows(bound_matrix,'ind',min_i);
-		%fprintf('%d-%d\n',min_diff_s,min_diff_e);
+		fprintf('%d-%d %g\n',min_diff_s,min_diff_e,min_diff);
 		
 		%keyboard;
 	end
