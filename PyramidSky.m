@@ -1,5 +1,4 @@
 function [supermap,pyrIsTad,skyAreBlue] = PyramidSky(a_t,a_b,h,m)
-%Returns 2D ma_tirx L
 % L(i,j) = sum( llr(pyramid is tad) + llr(sky are background) )
 
 clr = triu(tril(ones(size(a_t)),h),m);
@@ -52,18 +51,18 @@ return
 end
 
 function pyrm = LlrPyramid(a,h)
-a_size = size(a,1);
-pyrm = zeros(a_size);
+	a_size = size(a,1);
+	pyrm = zeros(a_size);
 
-%Fill pyramid
-for x = a_size:-1:1 %Row
+	%Fill pyramid
+	for x = a_size:-1:1 %Row
 		for y = (a_size+1-x):-1:max(1,a_size+1-x-h) %Col
 			pyrm(x,y) = LlrPyramidHelper(a,x,y);
 		end
 	end
 
 	function psum = LlrPyramidHelper(a,i,j)
-	if i+j == a_size+1
+		if i+j == a_size+1
 			psum = a(i,j);
 		else
 			%Using the next column

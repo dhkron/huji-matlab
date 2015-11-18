@@ -1,7 +1,7 @@
 % GenerateProbmapsFromModel
 %
 % model+matrix to probTAD,probBG and LPR 
-function [] = GenerateSupersumFromModel(fMatrix,fModel,res,win,fOutSupersum,fOutT,fOutB)
+function [] = GenerateSupersumFromModel(fMatrix,fModel,res,win,fOutSupersum,fOutT,fOutB,fOutLLR)
 if ischar(win)
 	win = str2num(win);
 end;
@@ -14,7 +14,7 @@ MAX_DIAG = win/res; %So that 2mb in 20k window will result in such and so
 
 %Load
 Log('Loading')
-a = load(fMatrix);
+a = load(fMatrix)/1;
 m = load(fModel);
 Log()
 
@@ -41,6 +41,7 @@ Log('Saving')
 dlmwrite(fOutT,a_pdt);
 dlmwrite(fOutB,a_pdb);
 dlmwrite(fOutSupersum,supersum);
+dlmwrite(fOutLLR,a_llr);
 Log()
 
 end

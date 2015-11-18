@@ -71,15 +71,17 @@ function [dynmsk] = printSolution(dynsol,s,e,offset)
 			%Do printin and add to mask
 			fprintf('%d-%d ',i+offset,j+offset)
 			if abs(i-j) > 5
-				hold on;
-				ax = axis;
-				plot([i,i],[ax(3),ax(4)],'b--');
-				plot([ax(1),ax(2)],[i,i],'b--');
-				plot([j,j],[ax(3),ax(4)],'r-.');
-				plot([ax(1),ax(2)],[j,j],'r-.');
-				xp = [i i j j];
-				yp = [i j j i];
-				%patch(xp,yp,'magenta','FaceAlpha',0.1,'EdgeColor','none');
+				if ~isempty(findall(0,'Type','Figure'))
+					hold on;
+					ax = axis;
+					plot([i,i],[ax(3),i],'g--');
+					plot([i,ax(2)],[i,i],'g--');
+					plot([j,j],[ax(3),j],'b-.');
+					plot([j,ax(2)],[j,j],'b-.');
+					%xp = [i i j j];
+					%yp = [i j j i];
+					%patch(xp,yp,'magenta','FaceAlpha',0.1,'EdgeColor','none');
+				end
 			end
 		else
 			dynmsk(current) = 1;

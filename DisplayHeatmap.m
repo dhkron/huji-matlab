@@ -1,5 +1,5 @@
 function f = DisplayHeatmap(a,range,box,scheme)
-	f = figure('units','normalized','outerposition',[0 0 1 1]);
+	f = figure('units','normalized','outerposition',[0 0 1 1]);%,'visible','off');
 	hasRange = ( exist('range','var') && numel(range)>1 );
 	hasBox = ( exist('box','var') && numel(box)>1);
 	hasScheme = exist('scheme','var') && numel(scheme)>0;
@@ -13,9 +13,16 @@ function f = DisplayHeatmap(a,range,box,scheme)
 		imagesc(a);
 	end
 	if hasScheme
-		red = [ones(256,1),(256:-1:1)'/256,(256:-1:1)'/256];
-		colormap(red);
+		if strcmpi(scheme,'orange')
+			orange = [ones(256,1),0.8*(256:-1:1)'/256+0.2,(256:-1:1)'/256];
+			colormap(orange);
+		else
+			red = [ones(256,1),(256:-1:1)'/256,(256:-1:1)'/256];
+			colormap(red);
+		end
 	end
-	axis equal;
+	axis square;
+	axis tight;
+	%axis equal;
 	colorbar;
 end
