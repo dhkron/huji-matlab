@@ -1,16 +1,18 @@
 % Input: cost 0 TADs
 % Output: Hierarchy
-function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
+function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,prefix)
 	%Maximal merge distance, in blocks! assume this will be a paramete calculated with res and stuff
-	maxMerge = 4000000/20000;
+	maxMerge = 5000000/res; %was 5mb
 
 	%LLR height, in blocks! assume this magically got here. It is just 2mb/res
-	H_llr = 2000000/20000;
+	H_llr = 2000000/res;
 
 	bounds = [0 bnd box_e-box_s+1];
 	offset = box_s-1;
 
 	textDraw = {};
+
+	fBed = fopen(sprintf('/cs/cbio/gil/htad-chain/output/bed/chr%d_%s_full.bed',chrNum,prefix),'w');
 
 	%fprintf('Range 1\t| Range2\t| V_DynProg\t| V_Super\n')
 	%fprintf('-----------------------------------------------\n')
@@ -39,12 +41,20 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		yp = [s1 s1 e1 NaN];
 		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
 		textDraw{end+1} = [e1 s1 0];
+
+		% offset-1 : 1 is mapped to 0, 2 is mapped to RES, etc.
+		% With base of 501, 1 is actually 501, so add 500. Then remove 1 cause base 1 should be 0.
+		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s1+offset-1)*res,(e1+offset-1)*res,d1);
+		fprintf(fBed,M);
 	end
 	if i>0 
 		xp = [s2 e2 e2 NaN];
 		yp = [s2 s2 e2 NaN];
 		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
 		textDraw{end+1} = [e2 s2 0];
+
+		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s2+offset-1)*res,(e2+offset-1)*res,d2);
+		fprintf(fBed,M);
 	end
 	bound_matrix
 
@@ -135,12 +145,14 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b)
 		
 		textDraw{end+1} = [min_diff_e, min_diff_s, mergeNumber];	
 
-		mergeNumber = mergeNumber + 1;
-
-		bound_matrix = removerows(bound_matrix,'ind',min_i);
-		fprintf('%d-%d %g\n',min_diff_s,min_diff_e,min_diff);
+		fprintf('%d\t%d-%d\t%g\n',mergeNumber,min_diff_s,min_diff_e,min_diff);
 		
-		%keyboard;
+		bound_matrix = removerows(bound_matrix,'ind',min_i);
+		
+		M = sprintf('chr%d\t%d\t%d\tMerge%d\t%g\n',chrNum,(min_diff_s+offset-1)*res,(min_diff_e+offset-1)*res,mergeNumber,min_diff);
+		fprintf(fBed,M);
+
+		mergeNumber = mergeNumber + 1;
 	end
 
 	for c = textDraw

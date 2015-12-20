@@ -8,12 +8,8 @@ function [] = CreateAndSaveLotsOfImages(res,pixels_in_image)
 	llr_tmp = strcat(path,'m%s.llr.chr%d.txt');
 	d_tmp = '/cs/cbio/gil/raw/Dixon/m%s_Domains/combined/chr%d.combined.domain';
 
-	res = 20000; %Magic!
-
-	chrsz = load('/cs/cbio/gil/raw/ChrSize/mm9.txt');
-	chrsz = fliplr(chrsz); %So that chrsz(i) = chrsz(i,1) = {Chromsome-i}'s size [also chrsz(i,2) become chr number actually]
-
-	required_images = chrsz(:,1)/(res*pixels_in_image);
+	%chrsz = load('/cs/cbio/gil/raw/ChrSize/mm9.txt');
+	%chrsz = fliplr(chrsz); %So that chrsz(i) = chrsz(i,1) = {Chromsome-i}'s size [also chrsz(i,2) become chr number actually]
 
 	for i = [1:19]
 		for tp = {'ES','CO'}
@@ -31,11 +27,11 @@ function [] = CreateAndSaveLotsOfImages(res,pixels_in_image)
 			s = load(s_path);
 			llr = load(llr_path);
 			d = load(d_path);
-			%If chrsz is bigger then a it is a problem
-			chrsz(i) = min(chrsz(i),size(a,1)*res);
+			
+			chrsz_i = size(a,1);%In blocks, of current, used to be chrsz(i)
 			%BEFORE USING THIS CODE CHANGE DISPLAYHEATMAP TO MAKE INVISIBLE UNICORNS. Not required in "-nodisplay"
 			fprintf('Saving %s chr%d\r\n',tp{1},i);
-			box = 1:min(pixels_in_image,chrsz(i)/res);
+			box = 1:min(pixels_in_image,chrsz_i);
 			box_index = 1;
 			box_inc = floor(pixels_in_image/2);
 
@@ -55,7 +51,7 @@ function [] = CreateAndSaveLotsOfImages(res,pixels_in_image)
 				%SaveFigure(g,sprintf('/cs/cbio/gil/htad-chain/output/png/m%s.chr%d.part%d.mymethod.png',tp{1},i,box_index));
 
 				%Add hierarchy layer and save
-				TadTree(d1,s,find(d3),box(1),box(end),llr,-llr);
+				TadTree(d1,s,find(d3),box(1),box(end),llr,-llr,res,i);
 				title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',tp{1},i,box(1),box(end)));
 			
 				%Update labels. LABELS MUST BE UPDATED AFTER ***LAST*** CHANGE TO GRAPH	
@@ -82,7 +78,7 @@ function [] = CreateAndSaveLotsOfImages(res,pixels_in_image)
 				%close(g);
 
 				box_index = box_index + 1;
-				box = (box(1)+box_inc) : min(box(end)+box_inc,chrsz(i)/res);
+				box = (box(1)+box_inc) : min(box(end)+box_inc,chrsz_i);
 
 				if flagBreak == 1
 					break
