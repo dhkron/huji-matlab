@@ -10,11 +10,10 @@ function [f] = DebugDixonDomains(fMatrix,fDomains,res,box)
 		b = fDomains;
 	end
 	hasBox = ( exist('box','var') && numel(box)>1);
-	if hasBox
-		f = DisplayHeatmap(log(a),0,box,'orange');
-	else
-		f = DisplayHeatmap(log(a),0,0,'orange');
+	if ~hasBox
+		box = 1:size(a,2);
 	end
+	f = DisplayHeatmap(log(a),[0 10],box,'orange');
 	hold on;
 	ax = axis;
 	if ischar(res)
@@ -26,13 +25,13 @@ function [f] = DebugDixonDomains(fMatrix,fDomains,res,box)
 		j = c(2);
 		if i > box(1) && i < box(end)
 			i = i-box(1)+1;
-			plot([i,i],[ax(3),ax(4)],'g--');
-			plot([ax(1),ax(2)],[i,i],'g--');
+			plot([i,i],[ax(3),i],'g--');
+			plot([i,ax(2)],[i,i],'g--');
 		end
 		if j > box(1) && j < box(end)
 			j = j-box(1)+1;
-			plot([j,j],[ax(3),ax(4)],'b-.');
-			plot([ax(1),ax(2)],[j,j],'b-.');
+			plot([j,j],[ax(3),j],'b-.');
+			plot([j,ax(2)],[j,j],'b-.');
 		end
 	end
 end

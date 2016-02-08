@@ -1,7 +1,7 @@
 % Input: cost 0 TADs
 % Output: Hierarchy
-function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,prefix)
-	%Maximal merge distance, in blocks! assume this will be a paramete calculated with res and stuff
+function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
+	%Maximal merge distance, in blocks, calculated with res
 	maxMerge = 5000000/res; %was 5mb
 
 	%LLR height, in blocks! assume this magically got here. It is just 2mb/res
@@ -12,7 +12,11 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,prefix)
 
 	textDraw = {};
 
-	fBed = fopen(sprintf('/cs/cbio/gil/htad-chain/output/bed/chr%d_%s_full.bed',chrNum,prefix),'w');
+	if exist('fBedPath','var') && numel(fBedPath)>0
+		fBed = fopen(fBedPath,'w');
+	else
+		fBed = fopen('/dev/null','w'); % <3 Linux 
+	end
 
 	%fprintf('Range 1\t| Range2\t| V_DynProg\t| V_Super\n')
 	%fprintf('-----------------------------------------------\n')
