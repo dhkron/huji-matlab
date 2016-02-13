@@ -49,7 +49,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
 		% offset-1 : 1 is mapped to 0, 2 is mapped to RES, etc.
 		% With base of 501, 1 is actually 501, so add 500. Then remove 1 cause base 1 should be 0.
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s1+offset-1)*res,(e1+offset-1)*res,d1);
-		fprintf(fBed,M);
+		%%fprintf(fBed,M);
 	end
 	if i>0 
 		xp = [s2 e2 e2 NaN];
@@ -58,7 +58,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
 		textDraw{end+1} = [e2 s2 0];
 
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s2+offset-1)*res,(e2+offset-1)*res,d2);
-		fprintf(fBed,M);
+		%%fprintf(fBed,M);
 	end
 	bound_matrix
 
@@ -149,12 +149,12 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
 		
 		textDraw{end+1} = [min_diff_e, min_diff_s, mergeNumber];	
 
-		fprintf('%d\t%d-%d\t%g\n',mergeNumber,min_diff_s,min_diff_e,min_diff);
+		%%fprintf('%d\t%d-%d\t%g\n',mergeNumber,min_diff_s,min_diff_e,min_diff);
 		
 		bound_matrix = removerows(bound_matrix,'ind',min_i);
 		
 		M = sprintf('chr%d\t%d\t%d\tMerge%d\t%g\n',chrNum,(min_diff_s+offset-1)*res,(min_diff_e+offset-1)*res,mergeNumber,min_diff);
-		fprintf(fBed,M);
+		%%fprintf(fBed,M);
 
 		mergeNumber = mergeNumber + 1;
 	end
