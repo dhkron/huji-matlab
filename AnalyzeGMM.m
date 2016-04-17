@@ -7,10 +7,15 @@ for i = MIN_DIAG:MAX_DIAG
 	%dgn_clean = log(dgn_clean); %Log-normal % MUST BE CONSISTENT HERE
 	dgn_clean = GetDiag(a,i,1,1,1,1);%Rm Zeros&Nan, Log % BE CONSISTENT IN LOG NORMAL +1 or +0
 
-	if numel(dgn_clean)>0
+	if numel(dgn_clean)>1
 
 		options = statset('MaxIter',1000);
-		GMModel = fitgmdist(dgn_clean,k,'Options',options);
+		try
+			GMModel = fitgmdist(dgn_clean,k,'Options',options);
+		catch
+			a_gmm{i}.mu = mean(dgn_clean);
+			a_gmm{i}.Sigma = var(dgn_clean);
+		end
 		a_gmm{i}=GMModel;
 
 		[~,msgid] = lastwarn;

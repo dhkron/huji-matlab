@@ -47,6 +47,7 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
 		textDraw{end+1} = [e1 s1 0];
 
 		% offset-1 : 1 is mapped to 0, 2 is mapped to RES, etc.
+		% I think this applis only to printing..
 		% With base of 501, 1 is actually 501, so add 500. Then remove 1 cause base 1 should be 0.
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s1+offset-1)*res,(e1+offset-1)*res,d1);
 		fprintf(fBed,M);
@@ -66,8 +67,8 @@ function [] = TadTree(d,s,bnd,box_s,box_e,a_t,a_b,res,chrNum,fBedPath)
 	while size(bound_matrix,1)>1
 		sz = size(bound_matrix,1);
 		min_diff = Inf;
-		min_diff_s = -1;
-		min_diff_e = -1;
+		min_diff_s = -1; %Hold start of min diff row
+		min_diff_e = -1; %end of min diff row
 		min_i = 0;
 		%First, find the minimal merge
 		for i = 1:sz

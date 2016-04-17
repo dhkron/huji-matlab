@@ -38,9 +38,9 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	Log();
 
 	%RMSE
-	fprintf('RMSE of Tads hierarchies %g\r\n',GetRMSE(RES_Hrr,nij,X1,res));
-	fprintf('RMSE of Tads without hierarchies %g\r\n',GetRMSE(RES_Tad,nij,X2,res));
-	fprintf('RMSE of Dixon with no hierarchies %g\r\n',GetRMSE(RES_Dxn,nij,X3,res));
+	fprintf('RMSE of Tads hierarchies %g\r\n',GetRMSE(RES_Hrr,nij,res));
+	fprintf('RMSE of Tads without hierarchies %g\r\n',GetRMSE(RES_Tad,nij,res));
+	fprintf('RMSE of Dixon with no hierarchies %g\r\n',GetRMSE(RES_Dxn,nij,res));
 
 	%Write beds
 	BedWrite([bedOutPath '_1.bed'],prm_hrr,chrNum,firstMergeIndex);
@@ -48,10 +48,10 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	BedWrite([bedOutPath '_3.bed'],prm_dxn,chrNum,inf);
 end
 
-function [RMSE] = GetRMSE(RES,nij,X,res)
+function [RMSE] = GetRMSE(RES,nij,res) %Changed by Dror Moran on 21.2.16
 	clear_diag = CreateDiagMatrix(size(RES,1), 1, floor(5000000/res));
 	RES(~clear_diag) = NaN; %Set anything above 5m to NaN
-	RES_sq = (RES-nij(X,X)).^2;
+	RES_sq = (RES-nij).^2;
 	RMSE = sqrt(nanmean(RES_sq(:)));
 end
 
@@ -152,6 +152,13 @@ function [newRES, grad] = calcTadGradient(DAT, RES, res)
 	
 	%Rebuilt matrix
 	newRES = zeros(N+1);
+	
+	%Add value to the main diagonal - Change by Dror Moran on 8.2.16
+	oldDiag = diag(RES);
+	newDiag = zeros(1, length(oldDiag));
+	newDiag(find(isnan(oldDiag))) = 2^(log2(i*res)*b1(1)+b1(2));
+        newRES = newRES + diag(newDiag);
+
 	if ValueCount > 1
 		b = [];
 		for i=1:N

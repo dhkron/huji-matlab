@@ -4,6 +4,9 @@ function [a,a_tad,a_bg,a_cross] = FindMixtureModelImage(chrNum,prefix,res,win,di
 dirPath = '/cs/grad/gilr02/cbio/htad-chain/output/';
 fMatrix = [dirPath prefix sprintf('.matrix.chr%d.txt',chrNum)];
 fDomains = [dirPath prefix sprintf('.domains.chr%d.txt',chrNum)];
+	
+redsh = [171 55 54; 178 61 60; 196 66 66; 217 50 31; 231 79 78; 233 104 104]/255;
+yelsh = [234 193 23; 242 187 102 ; 251 185 23 ; 251 177 23 ; 255 166 47 ; 233 171 23]/255;
 
 if ischar(win)
 	win = str2num(win);
@@ -40,14 +43,19 @@ Log();
 % Instead, we remove the crosses because they are a mixed state
 
 a_tad = a_tadmask .* a_diag; %No tiles (xor), just TADs
+a_tad(~a_tadmask)=NaN; 
 a_bg = a_bgmask .* a_diag; %Background, no cross tads
+a_bg(~a_bgmask)=NaN; 
 a_cross = a_crossmask .* a_diag; %Cross TAD stuff
+a_cross(~a_crossmask)=NaN; 
 
 %To calculate priors, we set a_cross to 0 so that prior(tad) = #(tad)/#(tad)+#(bg)
 [pr_tad, pr_bg, pr_crs] = GetPdTBC(a_tadmask,a_bgmask,a_crossmask.*0,MIN_DIAG,MAX_DIAG);%Model
 Log();
 
 %fprintf('Num\tType\tSW\tKS\tSKW\tKRT\r\n');
+figure('color','w'); hold on; %Used for multi diagonals
+i = 1;
 for diagNum = diagNums
 	%{
 	data = GetDiag(a,diagNum,1,1,1,1);
@@ -70,22 +78,35 @@ for diagNum = diagNums
 	fprintf('%d\t%s\t%g\t%g\t%3.3g\t%3.3g\r\n',diagNum,'Bg',swo,kso,skw,krt);
 	%}
 
-	figure;
-	title(sprintf('%s chr%d diag %d res %d',prefix,chrNum,diagNum,res));
-	hold on;
-	[f,xi] = ksdensity( GetDiag(a,diagNum,1,1,1,1) , sort(GetDiag(a,diagNum,1,1,1,1)) , 'function','pdf' );
-	plot(xi,f,'-');
-	[f_t,xi_t] = ksdensity( GetDiag(a_tad,diagNum,1,1,1,1) , sort(GetDiag(a_tad,diagNum,1,1,1,1)) , 'function','pdf' );
-	plot(xi_t,f_t*pr_tad(diagNum),'-');
-	[f_b,xi_b] = ksdensity( GetDiag(a_bg,diagNum,1,1,1,1) , sort(GetDiag(a_bg,diagNum,1,1,1,1)) , 'function','pdf' );
-	plot(xi_b,f_b*pr_bg(diagNum),'-');
-	SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.png',prefix,chrNum,diagNum,res));
-	SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.fig',prefix,chrNum,diagNum,res));
+	%figure;
+	%title(sprintf('%s chr%d diag %d res %d',prefix,chrNum,diagNum,res));
+	%hold on;
+	%[f,xi] = ksdensity( GetDiag(a,diagNum,1,1,1,1) , sort(GetDiag(a,diagNum,1,1,1,1)) , 'function','pdf' );
+	%plot(xi,f,'-','LineWidth',2.5);
+
+	%% Iterativly draw color red of distribution of TAD/Bg intensities across diagonals
+	
+	diagTad = GetDiag(a_tad,diagNum,1,0,1,1);
+	[f_t,xi_t] = ksdensity( diagTad , sort(diagTad) , 'function','pdf' );
+	i = i + 1;
+	%plot(xi_t,f_t,'-','LineWidth',2.5,'Color',redsh(i,:));
+	plot(xi_t,f_t*pr_tad(diagNum),'-','LineWidth',2.5,'Color',redsh(i,:));
+	
+	%diagBg = GetDiag(a_bg,diagNum,1,1,1,1);
+	%[f_t,xi_t] = ksdensity( diagBg , sort(diagBg) , 'function','pdf' );
+	%i = i + 1;
+	%plot(xi_t,f_t,'-','LineWidth',2.5,'Color',yelsh(i,:));
+
+	%figure;
+	%qqplot(xi_t);
+
+	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.png',prefix,chrNum,diagNum,res));
+	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.fig',prefix,chrNum,diagNum,res));
 end
 
 return
 %all this is not running lolz 
-%{
+
 %Find gaussians
 Log('Gaussianing');
 
@@ -95,32 +116,34 @@ meansTadDxn = zeros(size(a_gmm_tad));
 meansBgDxn = zeros(size(a_gmm_bg));
 sigmaTadDxn = zeros(size(a_gmm_tad));
 sigmaBgDxn = zeros(size(a_gmm_bg));
+
+a_gmm_all = AnalyzeGMM(a_diag,MIN_DIAG,MAX_DIAG,1);
+meansAll = zeros(size(a_gmm_all));
 for i = 1:numel(a_gmm_tad)
 	meansTadDxn(i) = a_gmm_tad{i}.mu(1);
 	meansBgDxn(i) = a_gmm_bg{i}.mu(1);
 	sigmaTadDxn(i) = sqrt(a_gmm_tad{i}.Sigma(1));
 	sigmaBgDxn(i) = sqrt(a_gmm_bg{i}.Sigma(1));
+	
+	meansAll(i) = a_gmm_all{i}.mu(1);
 end
 Log();
 
-Log('Saving');
-save(fOut,'meansTadDxn','meansBgDxn','sigmaTadDxn','sigmaBgDxn','pr_tad','pr_bg');
-Log();
-
-if 0 %Print Mean & Sigma for Dixon
-	x_vals = (MIN_DIAG:MAX_DIAG)*res;
-	figure;
-	loglog(x_vals,meansTadDxn,'rx-','LineWidth',2);
+if 1 %Print Mean & Sigma for Dixon
+	x_vals = log((MIN_DIAG:MAX_DIAG)*res);
+	figure('color','w');
+	plot(x_vals,meansAll,'LineWidth',2);
 	hold on;
-	loglog(x_vals,meansBgDxn,'bx-','LineWidth',2);
-	legend('Tad','Bound');
+	plot(x_vals,meansTadDxn,'LineWidth',2);
+	plot(x_vals,meansBgDxn,'LineWidth',2);
+	legend('All','Tad','Bg');
 
-	loglog(x_vals,meansTadDxn+sigmaTadDxn,'r--');
-	loglog(x_vals,meansTadDxn-sigmaTadDxn,'r--');
-	loglog(x_vals,meansBgDxn+sigmaBgDxn,'b--');
-	loglog(x_vals,meansBgDxn-sigmaBgDxn,'b--');
+	%loglog(x_vals,meansTadDxn+sigmaTadDxn,'r--');
+	%loglog(x_vals,meansTadDxn-sigmaTadDxn,'r--');
+	%loglog(x_vals,meansBgDxn+sigmaBgDxn,'b--');
+	%loglog(x_vals,meansBgDxn-sigmaBgDxn,'b--');
 	title('Mean vs. Distance');
-	xlabel('Distance (bp)');
+	xlabel('logDistance (bp)');
 	ylabel('Mean');
 	fprintf('Done\r\n');
 end
@@ -138,4 +161,3 @@ if 0
 end
 
 end
-%}

@@ -3,9 +3,11 @@ function [a,a_llr,s] = CreateSingleHierarchyBed(fMat,fLLR,fSupersum,prefix,res,c
 	hasBed = ( exist('bedPath','var') && numel(bedPath)>0 );
 	hasFig = ( exist('figPath','var') && numel(figPath)>0 );
 
+	Log('Loading files');
 	a = load(fMat);
 	a_llr = load(fLLR);
 	s = load(fSupersum);
+	Log();
 
 	if ischar(res)
 		res = str2num(res);
@@ -26,8 +28,12 @@ function [a,a_llr,s] = CreateSingleHierarchyBed(fMat,fLLR,fSupersum,prefix,res,c
 	end
 
 	DisplayHeatmap(log2(a+1),[0,6],box,'red');
+	Log('Finding TADs');
 	[d1 d2 d3]=DynProgTAD(s,box(1),box(end),0);
+	Log();
+	Log('Constructing hierarchy');
 	TadTree(d1,s,find(d3),box(1),box(end),a_llr,-a_llr,res,chr,bedPath);
+	Log();
 
 	view(-45,90);
 

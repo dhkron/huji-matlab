@@ -23,6 +23,7 @@ a_size = size(a,2);
 Log('Generating Matrixes')
 %True for not performing per-cell normalization
 [a_llr,a_pdt,a_pdb] = PosteriorHeatmap(a,MIN_DIAG,MAX_DIAG,m.pr_bg,m.meansBgDxn,m.sigmaBgDxn,m.pr_tad,m.meansTadDxn,m.sigmaTadDxn,false);
+%[a_llr,a_pdt,a_pdb] = LiklihoodHeatmap(a,MIN_DIAG,MAX_DIAG,m.meansBgDxn,m.sigmaBgDxn,m.meansTadDxn,m.sigmaTadDxn);
 a_pdt_log = log(a_pdt);
 a_pdt_log(isinf(a_pdt_log)) = 0;
 a_pdb_log = log(a_pdb);
