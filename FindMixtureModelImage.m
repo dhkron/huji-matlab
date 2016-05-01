@@ -5,6 +5,7 @@ dirPath = '/cs/grad/gilr02/cbio/htad-chain/output/';
 fMatrix = [dirPath prefix sprintf('.matrix.chr%d.txt',chrNum)];
 fDomains = [dirPath prefix sprintf('.domains.chr%d.txt',chrNum)];
 	
+blush = [0 66 123; 4 85 139; 10 97 154; 30 115 172; 40 130 200; 60 150 210]/255;
 redsh = [171 55 54; 178 61 60; 196 66 66; 217 50 31; 231 79 78; 233 104 104]/255;
 yelsh = [234 193 23; 242 187 102 ; 251 185 23 ; 251 177 23 ; 255 166 47 ; 233 171 23]/255;
 
@@ -53,11 +54,40 @@ a_cross(~a_crossmask)=NaN;
 [pr_tad, pr_bg, pr_crs] = GetPdTBC(a_tadmask,a_bgmask,a_crossmask.*0,MIN_DIAG,MAX_DIAG);%Model
 Log();
 
-%fprintf('Num\tType\tSW\tKS\tSKW\tKRT\r\n');
-figure('color','w'); hold on; %Used for multi diagonals
+figure('color','w'); %Used for multi diagonals
 i = 1;
 for diagNum = diagNums
+	%All	
+	[f,xi] = ksdensity( GetDiag(a,diagNum,1,1,1,1) , sort(GetDiag(a,diagNum,1,1,1,1)) , 'function','pdf' );
+	%semilogx(exp(xi-1),f,'-','LineWidth',2.5,'Color',redsh(i,:)); hold on;
+
+	%TAD
+	diagTad = GetDiag(a_tad,diagNum,1,0,1,1);
+	[f_t,xi_t] = ksdensity( diagTad , sort(diagTad) , 'function','pdf' );
+	%semilogx(exp(xi_t-1),f_t*pr_tad(diagNum),'-','LineWidth',2.5,'Color',blush(i,:)); %This with priors
+	semilogx(exp(xi_t-1),f_t,'-','LineWidth',2.5,'Color',blush(i,:)); %This with priors
+	hold on;
+
+	%Bg
+	diagBg = GetDiag(a_bg,diagNum,1,1,1,1);
+	[f_t,xi_t] = ksdensity( diagBg , sort(diagBg) , 'function','pdf' );
+	%semilogx(exp(xi_t-1),f_t*pr_bg(diagNum),'-','LineWidth',2.5,'Color',yelsh(i,:));
+
+	i = i + 1;
+	xlabel('Interaction Intensity');
+	ylabel('Probability Density');
+	set(gca,'xtick',[1 10 100 1000],'xticklabel',[1 10 100 1000]);
+
+	%figure;
+	%qqplot(xi_t);
+	% For saving lots of images: Was used for finding a good image
+	%title(sprintf('%s chr%d diag %d res %d',prefix,chrNum,diagNum,res));
+	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.png',prefix,chrNum,diagNum,res));
+	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.fig',prefix,chrNum,diagNum,res));
+
+	% Some statistical analisys
 	%{
+	%fprintf('Num\tType\tSW\tKS\tSKW\tKRT\r\n');
 	data = GetDiag(a,diagNum,1,1,1,1);
 	swo = swtest(data);
 	kso = kstest(data);
@@ -77,31 +107,6 @@ for diagNum = diagNums
 	krt = kurtosis(data);
 	fprintf('%d\t%s\t%g\t%g\t%3.3g\t%3.3g\r\n',diagNum,'Bg',swo,kso,skw,krt);
 	%}
-
-	%figure;
-	%title(sprintf('%s chr%d diag %d res %d',prefix,chrNum,diagNum,res));
-	%hold on;
-	%[f,xi] = ksdensity( GetDiag(a,diagNum,1,1,1,1) , sort(GetDiag(a,diagNum,1,1,1,1)) , 'function','pdf' );
-	%plot(xi,f,'-','LineWidth',2.5);
-
-	%% Iterativly draw color red of distribution of TAD/Bg intensities across diagonals
-	
-	diagTad = GetDiag(a_tad,diagNum,1,0,1,1);
-	[f_t,xi_t] = ksdensity( diagTad , sort(diagTad) , 'function','pdf' );
-	i = i + 1;
-	%plot(xi_t,f_t,'-','LineWidth',2.5,'Color',redsh(i,:));
-	plot(xi_t,f_t*pr_tad(diagNum),'-','LineWidth',2.5,'Color',redsh(i,:));
-	
-	%diagBg = GetDiag(a_bg,diagNum,1,1,1,1);
-	%[f_t,xi_t] = ksdensity( diagBg , sort(diagBg) , 'function','pdf' );
-	%i = i + 1;
-	%plot(xi_t,f_t,'-','LineWidth',2.5,'Color',yelsh(i,:));
-
-	%figure;
-	%qqplot(xi_t);
-
-	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.png',prefix,chrNum,diagNum,res));
-	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.fig',prefix,chrNum,diagNum,res));
 end
 
 return
