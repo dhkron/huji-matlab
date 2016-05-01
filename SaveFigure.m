@@ -9,10 +9,10 @@ function SaveFigure(handle, path)
 	saveas(handle,path); %In matlab, the extension matters
 	Log();
 
-	if findstr(path,'.png') && exist('export_fig')
-		higherQ = regexprep(path,'\.png$','.better.png');
-		Log('Saving file in better quality');
-		export_fig(handle,'-a4',higherQ);
-		Log();
-	end
+	%if findstr(path,'.png') && exist('export_fig')
+	%	higherQ = regexprep(path,'\.png$','.better.png');
+	%	Log('Saving file in better quality');
+	%	export_fig(handle,'-a4',higherQ);
+	%	Log();
+	%end
 end

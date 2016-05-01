@@ -6,21 +6,32 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 
 	addpath(genpath('/cs/cbio/gil/matlab/BSFKFolder')); %%%%%%%%%%Give some errors
 
+	if dxnPath == 0
+		skipDxn = true;
+		RES_Tad = 0;
+		RES_Dxn = 0;
+	else
+		skipDxn = false;
+	end
+
 	Log('Loading');
 
 	nij = load(matPath);
 	res = 40000;
 	
 	fBed = fopen(bedPath,'r');
-	[BED,C] = textscan(fBed,'chr%d\t%f\t%f\t%s\t%f',Inf)
+	[BED,C] = textscan(fBed,'chr%d\t%f\t%f\t%s\t%f',Inf);
 
 	firstMergeIndex = find(cellfun(@(x) strcmp(x,'Merge1'), BED{4}, 'UniformOutput', 1));
 
-	chrNum = min(cell2mat(BED(1))),
+	chrNum = min(cell2mat(BED(1)));
 
 	myBounds = floor( [ cell2mat(BED(2)) cell2mat(BED(3)) ]/res )+1;
-	myBoundsNoTad = myBounds(1:firstMergeIndex-1,:);
-	dxnBounds = floor( importdata(dxnPath)/res+1 );
+
+	if ~skipDxn
+		myBoundsNoTad = myBounds(1:firstMergeIndex-1,:);
+		dxnBounds = floor( importdata(dxnPath)/res+1 );
+	end
 
 	Log();
 
@@ -29,23 +40,29 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	[RES_Hrr,prm_hrr,X1] = GetResidual(myBounds,nij,res);
 	Log();
 
-	Log('Calculating Residual #2');
-	[RES_Tad,prm_tad,X2] = GetResidual(myBoundsNoTad,nij,res);
-	Log();
+	if ~skipDxn
+		Log('Calculating Residual #2');
+		[RES_Tad,prm_tad,X2] = GetResidual(myBoundsNoTad,nij,res);
+		Log();
 
-	Log('Calculating Residual #3');
-	[RES_Dxn,prm_dxn,X3] = GetResidual(dxnBounds,nij,res);
-	Log();
+		Log('Calculating Residual #3');
+		[RES_Dxn,prm_dxn,X3] = GetResidual(dxnBounds,nij,res);
+		Log();
+	end
 
 	%RMSE
 	fprintf('RMSE of Tads hierarchies %g\r\n',GetRMSE(RES_Hrr,nij,res));
-	fprintf('RMSE of Tads without hierarchies %g\r\n',GetRMSE(RES_Tad,nij,res));
-	fprintf('RMSE of Dixon with no hierarchies %g\r\n',GetRMSE(RES_Dxn,nij,res));
+	if ~skipDxn
+		fprintf('RMSE of Tads without hierarchies %g\r\n',GetRMSE(RES_Tad,nij,res));
+		fprintf('RMSE of Dixon with no hierarchies %g\r\n',GetRMSE(RES_Dxn,nij,res));
+	end
 
 	%Write beds
 	BedWrite([bedOutPath '_1.bed'],prm_hrr,chrNum,firstMergeIndex);
-	BedWrite([bedOutPath '_2.bed'],prm_tad,chrNum,inf);
-	BedWrite([bedOutPath '_3.bed'],prm_dxn,chrNum,inf);
+	if ~skipDxn
+		BedWrite([bedOutPath '_2.bed'],prm_tad,chrNum,inf);
+		BedWrite([bedOutPath '_3.bed'],prm_dxn,chrNum,inf);
+	end
 end
 
 function [RMSE] = GetRMSE(RES,nij,res) %Changed by Dror Moran on 21.2.16
