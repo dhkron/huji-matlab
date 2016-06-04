@@ -1,5 +1,5 @@
 function [a,a_norm] = LibermanLoader(chrNum,res)
-	dirOfMight = '/cs/cbio/gil/raw/GSE63525/GM12878_combined/%sb_resolution_intrachromosomal/chr%d';
+	dirOfMight = '/cs/cbio/gil/raw/GSE63525_5K_Liberman/GM12878_combined/%sb_resolution_intrachromosomal/chr%d';
 	mapq1 = 'MAPQG0'; %More data here, less accurate
 	mapq2 = 'MAPQGE30';
 	filePrefix = 'chr%d_%sb';
@@ -36,9 +36,9 @@ function [a,a_norm] = LibermanLoader(chrNum,res)
 	a_norm = a ./ (b*b');
 	
 	%Find median
-	a_clean = a_norm;
-	a_clean(isnan(a_clean)) = 0;
-	a_sums = sum(a_clean);
-	med = median(a_sums(a_sums>0));
-	a_norm = a_norm/med;
+	%a_clean = a_norm;
+	%a_clean(isnan(a_clean)) = 0;
+	%a_sums = sum(a_clean);
+	%med = median(a_sums(a_sums>0));
+	%a_norm = a_norm/med;
 end

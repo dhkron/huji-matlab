@@ -13,7 +13,7 @@ function [f] = DebugDixonDomains(fMatrix,fDomains,res,box)
 	if ~hasBox
 		box = 1:size(a,2);
 	end
-	f = DisplayHeatmap(log(a),[0 6],box,'orange');
+	f = DisplayHeatmap(log2(a+1),[0 15],box,'red');%Was orange for some reason
 	hold on;
 	ax = axis;
 	if ischar(res)

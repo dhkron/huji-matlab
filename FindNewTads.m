@@ -22,7 +22,7 @@ function [a,a_llr,s] = FindNewTads(fMat,fSupersum,res,box,fNewDomains)
 	bounds = [1 find(d3) box(end)-box(1)+1];
 	bounds2 = [bounds(1:end-1) ; bounds(2:end)];
 	realBounds = (bounds2'-1)*res;
-	dlmwrite(fNewDomains,realBounds);
+	dlmwrite(fNewDomains,realBounds,'precision',20);
 	Log();
 end
 

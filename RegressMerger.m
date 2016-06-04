@@ -178,7 +178,7 @@ function alpha_val = RegressMergeHelper(s1,e1,s2,e2,a,offset,bg)
 	box1 = (s1+offset):(e1+offset);
 	box2 = (s2+offset):(e2+offset);
 
-	if numel(box1) == 1 && numel(box2) == 1
+	if numel(box1) == 1 || numel(box2) == 1
 		alpha_val = 1;
 		return
 	end

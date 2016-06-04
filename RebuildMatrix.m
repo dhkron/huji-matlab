@@ -58,7 +58,7 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	end
 
 	%Write beds
-	BedWrite([bedOutPath '_1.bed'],prm_hrr,chrNum,firstMergeIndex);
+	BedWrite([bedOutPath],prm_hrr,chrNum,firstMergeIndex);
 	if ~skipDxn
 		BedWrite([bedOutPath '_2.bed'],prm_tad,chrNum,inf);
 		BedWrite([bedOutPath '_3.bed'],prm_dxn,chrNum,inf);
@@ -170,12 +170,6 @@ function [newRES, grad] = calcTadGradient(DAT, RES, res)
 	%Rebuilt matrix
 	newRES = zeros(N+1);
 	
-	%Add value to the main diagonal - Change by Dror Moran on 8.2.16
-	oldDiag = diag(RES);
-	newDiag = zeros(1, length(oldDiag));
-	newDiag(find(isnan(oldDiag))) = 2^(log2(i*res)*b1(1)+b1(2));
-        newRES = newRES + diag(newDiag);
-
 	if ValueCount > 1
 		b = [];
 		for i=1:N
@@ -192,6 +186,8 @@ function [newRES, grad] = calcTadGradient(DAT, RES, res)
 		end
 	end
 	newRES = bsxfun(@max, RES, newRES);%????
+	%The diagonal is not part of the model and therefore should be NaN, Dror 1.5.16 
+	newRES(logical(eye(size(newRES)))) = NaN;
 	grad = [b1; stat1(1); b2; stat2(1); pbreak];
 end
 
