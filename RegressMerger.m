@@ -93,6 +93,9 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		%First, find the minimal alpha
 		for i = 1:sz
 			alpha_val = bound_matrix(i,5);
+			if alpha_val > 1
+				alpha_val = 2-alpha_val;
+			end
 			
 			if alpha_val > max_alpha
 				max_alpha = alpha_val;
