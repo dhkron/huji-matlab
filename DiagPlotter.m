@@ -8,15 +8,32 @@
 % d(x,y) = d(x,y)*(100 - abs(x-y) );
 % DiagPlotter(d)
 
+d = zeros(100);
+d(12:73,12:73) = 1;
+d(12:73,12:73) = 1;
+for x=1:100
+	for y=1:100
+		d(x,y) =d(x,y)*1.2^(-abs(x-y));
+	end
+end
+L = DiagPlot(d);
+start = floor((size(L,2)+3)/2);
+L = L( start : end );
+figure;loglog(1:numel(L),L);
+L = DiagPlot(d(30:60,30:60));
+start = floor((size(L,2)+3)/2);
+L = L( start : end );
+figure;loglog(1:numel(L),L);
+
 % Trick of tommy
 % (D-BG)' \ (E-BG)' = regress((E-BG)',(D-BG)') 
-function [boxes] = DiagPlotter(c,res)
+function [boxes] = DiagPlotter(c,bounds,res)
 
-bounds = [11,38,85,100,120,139,146]; %chr10 151:300 Gatto
-bounds = [85,100,120,139,146]; %chr10 151:300 Gatto
-bounds = [38,85,100,139,146]; %chr10 151:300 Gatto
-bounds = [38,85,139,146]; %chr10 151:300 Gatto
-bounds = [11,38,54,85,139]; %chr10 151:300 Gatto
+%bounds = [11,38,85,100,120,139,146]; %chr10 151:300 Gatto
+%bounds = [85,100,120,139,146]; %chr10 151:300 Gatto
+%bounds = [38,85,100,139,146]; %chr10 151:300 Gatto
+%bounds = [38,85,139,146]; %chr10 151:300 Gatto
+%bounds = [11,38,54,85,139]; %chr10 151:300 Gatto
 bcp = [bounds(1:end-1) ; bounds(2:end) ];
 figure;
 colors = get(gca,'colororder');
@@ -46,7 +63,7 @@ for b1idx = 1:size(bcp,2)
 			patchName = char(patchCode);
 
 			t = c(x1:x2,y1:y2);
-			[L,K] = DiagPlot(t);
+			[~,L] = DiagPlot(t); %[L,K]
 
 			legendInfo{i} = sprintf('P1=%d,%d ; P2=%d,%d',x1,y1,x2,y2); % or whatever is appropriate
 			% TAD region
