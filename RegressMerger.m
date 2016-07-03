@@ -81,7 +81,7 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s2+offset-1)*res,(e2+offset-1)*res,0);
 		fprintf(fBed,M);
 	end
-	%bound_matrix
+	bound_matrix
 
 	mergeNumber = 1;
 	while size(bound_matrix,1)>1
@@ -93,9 +93,6 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		%First, find the minimal alpha
 		for i = 1:sz
 			alpha_val = bound_matrix(i,5);
-			if alpha_val > 1
-				alpha_val = 2-alpha_val;
-			end
 			
 			if alpha_val > max_alpha
 				max_alpha = alpha_val;
@@ -185,22 +182,43 @@ function alpha_val = RegressMergeHelper(s1,e1,s2,e2,a,offset,bg)
 		alpha_val = 1;
 		return
 	end
+	
+	[~,La1] = DiagPlot(a(box1,box1));
+	[~,La2] = DiagPlot(a(box2,box2));
+	La1 = La1( (numel(La1)+3)/2 : end ); %fix because of triangle, see DiagPlotter.m
+	La2 = La2( (numel(La2)+3)/2 : end ); %fix because of triangle, see DiagPlotter.m
 
 	a_temp = NaN*ones(e2-s1+1);
 	a_temp(1:(e1-s1+1),1:(e1-s1+1)) = a(box1,box1);
 	a_temp((s2-s1+1):(e2-s1+1),(s2-s1+1):(e2-s1+1)) = a(box2,box2);
-	[La,~] = DiagPlot(a_temp);
+	[~,La] = DiagPlot(a_temp);
 
 	La = La( (numel(La)+3)/2 : end ); %fix because of triangle, see DiagPlotter.m
 	%DisplayHeatmap(log2(a_temp+1),0,[],'red');
 
 	t_merge = a(box1,box2);
-	[Lm,~] = DiagPlot(t_merge);
+	[~,Lm] = DiagPlot(t_merge);
 
-	l = min([numel(Lm),numel(La),numel(bg)]);
+	%l = min([numel(Lm),numel(La),numel(bg)]);
+	%LA = La(1:l)';
+	%LM = Lm(1:l)';
+	%BG = bg(1:l)';
+	%alpha_val = regress( LM-BG, LA-BG );
+	
+	l1 = min([numel(Lm),numel(La1),numel(bg)]);
+	LA1 = La(1:l1)';
+	LM1 = Lm(1:l1)';
+	BG1 = bg(1:l1)';
+	alpha_val1 = regress( LM1-BG1, LA1-BG1 );
+	
+	l2 = min([numel(Lm),numel(La2),numel(bg)]);
+	LA2 = La(1:l2)';
+	LM2 = Lm(1:l2)';
+	BG2 = bg(1:l2)';
+	alpha_val2 = regress( LM2-BG2, LA2-BG2 );
 
-	LA = La(1:l)';
-	LM = Lm(1:l)';
-	BG = bg(1:l)';
-	alpha_val = regress( LM-BG, LA-BG );
+	alpha_val = (alpha_val1*alpha_val2)^(0.5);
+	if alpha_val > 1
+		alpha_val = 2-alpha_val;
+	end
 end

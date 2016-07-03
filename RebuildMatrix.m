@@ -2,7 +2,7 @@
 % RES is actually the restored or rebuilt matrix.
 % It is NOT the difference between that data and the rebuilt matrix.
 %
-function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOutPath)
+function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOutPath,res)
 
 	addpath(genpath('/cs/cbio/gil/matlab/BSFKFolder')); %%%%%%%%%%Give some errors
 
@@ -17,7 +17,6 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	Log('Loading');
 
 	nij = load(matPath);
-	res = 40000;
 	
 	fBed = fopen(bedPath,'r');
 	[BED,C] = textscan(fBed,'chr%d\t%f\t%f\t%s\t%f',Inf);
