@@ -1,6 +1,18 @@
 % Plots hierarchys within the range
-function [] = PlotHrrcBed(a,bedf,s,e,res,filter)
-	bed = importdata(bedf);
+% @s & @e are in pixel units
+% filter == true -> print only tads (filters out merges if true)
+function [] = PlotHrrcBed(fMatrix,fHrrcBed,s,e,res,filter)
+
+	if ischar(fMatrix)
+		a = load(fMatrix);
+	else
+		a = fMatrix;
+	end
+	if ischar(fHrrcBed)
+		bed = importdata(fHrrcBed);
+	else
+		bed = fHrrcBed)
+	end
 
 	a_quality = bed.data(:);
 	a_t = bed.textdata(:,4);
