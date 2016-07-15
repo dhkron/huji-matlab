@@ -1,3 +1,6 @@
+% Was made to look at TADs with bilinear line
+% My theory was that bilinears are simply two tads that were mis-marked
+% It looked to me like itwas the case, but Tommy was not convinced
 function [] = MarginDisplayBi(c,x,y)
 	box=floor(x/4):floor(y/4);
 	box2=[box(1)-20:box(1)-1 box box(end)+1:box(end)+20];
