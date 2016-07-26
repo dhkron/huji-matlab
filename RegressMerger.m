@@ -24,17 +24,20 @@
 % Examples: chr10 gettaEMT
 % RegressMerger([11,38,54,85,100,120,139],a,151,300,40000,bgModel,9999999);
 %
-function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath)
+function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath, doFig)
+	hasFig = ( exist('doFig','var') && doFig );
+
 	% Bound relative, always having 0 as start and 'end' as end
 	% So giving relative bounds is possible, as long as start and end are well
 	bounds = [0 bnd box_e-box_s+1];
 	% The matrix @a is referenced by offset.
 	% Boundaries are relative, so to access real data we add the offset
 	offset = box_s-1;
-	
-	DisplayHeatmap(log2(1+a),0,box_s:box_e,'red');
 
-	textDraw = {};
+	if hasFig	
+		DisplayHeatmap(log2(1+a),0,box_s:box_e,'red');
+		textDraw = {};
+	end
 
 	if exist('fBedPath','var') && numel(fBedPath)>0
 		fBed = fopen(fBedPath,'w');
@@ -59,11 +62,13 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		%The merge parameter: Value of alpha of the merge area
 		alpha_val = RegressMergeHelper(s1,e1,s2,e2,a,offset,bgModel);%
 		bound_matrix(i,:) = [s1 ,e1, s2, e2, alpha_val];
-	
-		xp = [s1 e1 e1 NaN];
-		yp = [s1 s1 e1 NaN];
-		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
-		textDraw{end+1} = [e1 s1 0];
+
+		if hasFig	
+			xp = [s1 e1 e1 NaN];
+			yp = [s1 s1 e1 NaN];
+			patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
+			textDraw{end+1} = [e1 s1 0];
+		end
 
 		% offset-1 : 1 is mapped to 0, 2 is mapped to RES, etc.
 		% With base of 501, 1 is actually 501, so add 500. Then remove 1 cause base 1 should be 0.
@@ -72,11 +77,13 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		fprintf(fBed,M);
 	end
 	%Add last TAD. First one is included in the loop. This is lazy coding.
-	if i>0 
-		xp = [s2 e2 e2 NaN];
-		yp = [s2 s2 e2 NaN];
-		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
-		textDraw{end+1} = [e2 s2 0];
+	if i>0
+		if hasFig	
+			xp = [s2 e2 e2 NaN];
+			yp = [s2 s2 e2 NaN];
+			patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
+			textDraw{end+1} = [e2 s2 0];
+		end
 
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s2+offset-1)*res,(e2+offset-1)*res,0);
 		fprintf(fBed,M);
@@ -136,15 +143,15 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 			bound_matrix(max_i+1,:) = [max_alpha_s,c(2),c(3),c(4),new_alpha];
 		end
 
-		xp = [max_alpha_s max_alpha_e max_alpha_e NaN];%max_alpha_e];
-		yp = [max_alpha_s max_alpha_s max_alpha_e NaN];%max_alpha_s];
-		patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
+		if hasFig
+			xp = [max_alpha_s max_alpha_e max_alpha_e NaN];%max_alpha_e];
+			yp = [max_alpha_s max_alpha_s max_alpha_e NaN];%max_alpha_s];
+			patch(xp,yp,'magenta','FaceAlpha',0.0,'EdgeColor','black','LineWidth',1.5,'EdgeAlpha',1);
+			textDraw{end+1} = [max_alpha_e, max_alpha_s, mergeNumber];	
+		end
 
-		pos = (max_alpha_s + max_alpha_e)/2;
-		
-		textDraw{end+1} = [max_alpha_e, max_alpha_s, mergeNumber];	
-
-		%fprintf('%d\t%d-%d\t%g\n',mergeNumber,max_alpha_s,max_alpha_e,max_alpha);
+		%Debug
+		fprintf('%d\t%d-%d\t%g\n',mergeNumber,max_alpha_s,max_alpha_e,max_alpha);
 		
 		bound_matrix = removerows(bound_matrix,'ind',max_i);
 		
@@ -154,23 +161,25 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		mergeNumber = mergeNumber + 1;
 	end
 
-	for c = textDraw
-		drw = c{1};
-		max_alpha_e = drw(1);
-		max_alpha_s = drw(2);
-		mergeNumber = drw(3);
-		if mergeNumber == 0
-			tsize = 1;
-		elseif mergeNumber > 9
-			tsize = 8;
-		else
-			tsize = 10;
+	if hasFig
+		for c = textDraw
+			drw = c{1};
+			max_alpha_e = drw(1);
+			max_alpha_s = drw(2);
+			mergeNumber = drw(3);
+			if mergeNumber == 0
+				tsize = 1;
+			elseif mergeNumber > 9
+				tsize = 8;
+			else
+				tsize = 10;
+			end
+			t = text('position',[max_alpha_e, max_alpha_s],'fontsize',tsize,'string',sprintf('%d',mergeNumber),'HorizontalAlignment','center','Color','black','FontName','arial');
+			tExt = t.Extent;
+			rad = ceil(max([tExt(3), tExt(4)]))+1;
+			rectangle('Position',[max_alpha_e-rad/2 max_alpha_s-rad/2 rad rad],'Curvature',[1,1,],'FaceColor','white');
+			t = text('position',[max_alpha_e, max_alpha_s],'fontsize',tsize,'string',sprintf('%d',mergeNumber),'HorizontalAlignment','center','Color','black','FontName','arial');
 		end
-		t = text('position',[max_alpha_e, max_alpha_s],'fontsize',tsize,'string',sprintf('%d',mergeNumber),'HorizontalAlignment','center','Color','black','FontName','arial');
-		tExt = t.Extent;
-		rad = ceil(max([tExt(3), tExt(4)]))+1;
-		rectangle('Position',[max_alpha_e-rad/2 max_alpha_s-rad/2 rad rad],'Curvature',[1,1,],'FaceColor','white');
-		t = text('position',[max_alpha_e, max_alpha_s],'fontsize',tsize,'string',sprintf('%d',mergeNumber),'HorizontalAlignment','center','Color','black','FontName','arial');
 	end
 end
 

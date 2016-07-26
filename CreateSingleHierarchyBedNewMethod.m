@@ -29,22 +29,22 @@ function [a,a_llr,s] = CreateSingleHierarchyBedNewMethod(fMat,fNewDomains,fBgMod
 		figPath = '';
 	end
 
-	DisplayHeatmap(log2(a+1),[0,6],box,'red');
+	if hasFig
+		DisplayHeatmap(log2(a+1),[0,6],box,'red');
+	end
 
 	Log('Constructing hierarchy');
-	RegressMerger(boundaries,a,box(1),box(end),res,bgModel,chr,bedPath);
+	RegressMerger(boundaries,a,box(1),box(end),res,bgModel,chr,bedPath,hasFig);
 	%TadTree(d1,s,find(d3),box(1),box(end),a_llr,-a_llr,res,chr,bedPath);
 	Log();
 
-	view(-45,90);
-
-	title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',prefix,chr,box(1),box(end)));
-
-	g=gcf;
 	if hasFig
+		g=gcf;
+		view(-45,90);
+		title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',prefix,chr,box(1),box(end)));
 		SaveFigure(g,figPath);
 		%path = sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/Hierarchies_%s_Chr%d_Full.png',prefix,chr);
+		close(gcf);
 	end
-	close(gcf);
 end
 

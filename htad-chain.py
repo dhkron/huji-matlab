@@ -236,8 +236,8 @@ doMatlabStageWithFlag("FindTADsNewModel",stage_line,path_to_matlab,matlab_dump,f
 matlab_dump = output_dir + "/%s.%s.mdump5"%(prefix,chrname)
 matlab_dump = os.path.abspath(matlab_dump)
 #	      CreateSingleHierarchyBedNewMethod(fMat,fNewDomains,fBgModel,prefix,res,chr,box,bedPath,figPath)
-stage_line = "CreateSingleHierarchyBedNewMethod %s %s %s %s %s %s %s %s %s"
-stage_line = stage_line%(fMatrixDbg,fNewDomains,fModel,prefix,res,chrnum,"0",fBed,fFig)
+stage_line = "CreateSingleHierarchyBedNewMethod %s %s %s %s %s %s %s %s" # %s
+stage_line = stage_line%(fMatrixDbg,fNewDomains,fModel,prefix,res,chrnum,"0",fBed) # fFig
 doMatlabStageWithFlag("FindHierarchies",stage_line,path_to_matlab,matlab_dump,flgBed)
 
 #Stage 10 - Create model estimated heatmap & BED describing the two power law
