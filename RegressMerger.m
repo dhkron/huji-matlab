@@ -81,7 +81,7 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		M = sprintf('chr%d\t%d\t%d\tTAD\t%g\n',chrNum,(s2+offset-1)*res,(e2+offset-1)*res,0);
 		fprintf(fBed,M);
 	end
-	bound_matrix
+	bound_matrix;
 
 	mergeNumber = 1;
 	while size(bound_matrix,1)>1
@@ -144,7 +144,7 @@ function [] = RegressMerger(bnd, a, box_s, box_e, res, bgModel, chrNum, fBedPath
 		
 		textDraw{end+1} = [max_alpha_e, max_alpha_s, mergeNumber];	
 
-		fprintf('%d\t%d-%d\t%g\n',mergeNumber,max_alpha_s,max_alpha_e,max_alpha);
+		%fprintf('%d\t%d-%d\t%g\n',mergeNumber,max_alpha_s,max_alpha_e,max_alpha);
 		
 		bound_matrix = removerows(bound_matrix,'ind',max_i);
 		
