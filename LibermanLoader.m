@@ -1,5 +1,12 @@
-function [a,a_norm] = LibermanLoader(chrNum,res)
-	dirOfMight = '/cs/cbio/gil/raw/GSE63525_5K_Liberman/GM12878_combined/%sb_resolution_intrachromosomal/chr%d';
+function [a,a_norm] = LibermanLoader(chrNum,res,path)
+	if ~exist('path','var')
+		Log('Using default directory for backward compatibility');
+		dirOfMight = '/cs/cbio/gil/raw/GSE63525_5K_Liberman/GM12878_combined/%sb_resolution_intrachromosomal/chr%d';
+		Log();
+	else
+		dirOfMight = ['/cs/cbio/gil/raw/GSE63525_5K_Liberman/' path '/%sb_resolution_intrachromosomal/chr%d'];
+	end
+
 	mapq1 = 'MAPQG0'; %More data here, less accurate
 	mapq2 = 'MAPQGE30';
 	filePrefix = 'chr%d_%sb';

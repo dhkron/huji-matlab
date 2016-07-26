@@ -116,8 +116,10 @@ fEnh4 = makeAbsFile("enh_1e-4.bed")
 fEnh3 = makeAbsFile("enh_1e-3.bed")
 fEnh2 = makeAbsFile("enh_1e-2.bed")
 fEnhR = makeAbsFile("enh_rand.bed")
+fEnh52 = makeAbsFile("enh_5e-2.bed")
 
 #Check file exist
+flgFixMatrix = not os.path.exists(fMatrix2) and not skipdixon
 flgDI = not os.path.exists(fDI) and not skipdixon
 flgHMM = not os.path.exists(fHMM) and not skipdixon
 flg7col = not os.path.exists(f7col) and not skipdixon
@@ -129,29 +131,30 @@ flgNewTads = not (os.path.exists(fMatrixDbg) and os.path.exists(fNewDomains))
 flgBed = not (os.path.exists(fBed))
 flgME = not (os.path.exists(fBedModelEstimated))
 flgHrrcDebug = not (os.path.exists(fHrrcDebug))
-flgEnh = not (os.path.exists(fEnh4) or os.path.exists(fEnh3) or os.path.exists(fEnh2) or os.path.exists(fEnhR)) 
+flgEnh = not (os.path.exists(fEnh4) or os.path.exists(fEnh3) or os.path.exists(fEnh2) or os.path.exists(fEnhR) or os.path.exists(fEnh52)) 
 
 #Matrix fixer
-with open(fMatrix,"rb") as f:
-	try:
-		line = f.readline()
-		_chr,_start,_end,_rest = line.split("\t",3)
-		if "chr" not in _chr:
-			print "Creating a Dixon-compatible matrix..."
-			#Fix matrix
-			with open(fMatrix2,"wb") as f2:
-				f2.write("%s\t%d\t%d\t%s"%(chrname,0,res,line))
-				counter = 1
-				for line in f.readlines():
-					f2.write("%s\t%d\t%d\t%s"%(chrname,counter*res,(counter+1)*res,line))
-					counter = counter+1
-			#File write complete, switch pointers
-			fMatrix = fMatrix2
-			print "Done!"
-	except Exception as e:
-		print "Exception occured: %s"%e
-		print "Probably this matrix is not in the right format"
-		exit()
+if !flgFixMatrix:
+	with open(fMatrix,"rb") as f:
+		try:
+			line = f.readline()
+			_chr,_start,_end,_rest = line.split("\t",3)
+			if "chr" not in _chr:
+				print "Creating a Dixon-compatible matrix..."
+				#Fix matrix
+				with open(fMatrix2,"wb") as f2:
+					f2.write("%s\t%d\t%d\t%s"%(chrname,0,res,line))
+					counter = 1
+					for line in f.readlines():
+						f2.write("%s\t%d\t%d\t%s"%(chrname,counter*res,(counter+1)*res,line))
+						counter = counter+1
+				#File write complete, switch pointers
+				fMatrix = fMatrix2
+				print "Done!"
+		except Exception as e:
+			print "Exception occured: %s"%e
+			print "Probably this matrix is not in the right format"
+			exit()
 
 #Stage 1 - ./DI_from_matrix.pl matrix.chrN @res @win @chrsize > DI.chrN
 line_mat_to_di = "DI_from_matrix.pl %s %s %s %s > %s"
@@ -257,6 +260,7 @@ doMatlabStageWithFlag("DebugHierarchies",stage_line,path_to_matlab,matlab_dump,f
 matlab_dump = output_dir + "/%s.%s.mdump8"%(prefix,chrname)
 matlab_dump = os.path.abspath(matlab_dump)
 #	      EnhancerPromoter(fnij,fme,fgenes,res,ch,out4,out3,out2,outRand)
-stage_line = "EnhancerPromoter %s %s %s %d %d %s %s %s %s"
-stage_line = stage_line%(fMatrixDbg,fMatrixModelEstimated,fGenes,res,chrnum,fEnh4,fEnh3,fEnc2,fEnhR) 
+stage_line = "EnhancerPromoter %s %s %s %d %d %s %s %s %s %s"
+stage_line = stage_line%(fMatrixDbg,fMatrixModelEstimated,fGenes,res,chrnum,fEnh4,fEnh3,fEnh2,fEnhR,fEnh52) 
+print stage_line
 doMatlabStageWithFlag("EnhancerPromoter",stage_line,path_to_matlab,matlab_dump,flgEnh)

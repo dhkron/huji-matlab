@@ -22,7 +22,8 @@ k2=length(X); k=ceil(k2/2);
 if k<10, return; end;
 
 % calculate z-scores for entire triangle
-PP=zscore(MM(:)); PP=reshape(PP,k2,k2);
+PP=NaN*MM; I=~isnan(MM); PP1=zscore(MM(I)); PP(I)=PP1; clear PP1 I;
+% PP=zscore(MM(:)); PP=reshape(PP,k2,k2);
 % get all windows that interact with anchor (promoter)
 V=[PP(1:k,k)' PP(k,(k+1):end)];
 % calculate p-values using standard Normal distribution
