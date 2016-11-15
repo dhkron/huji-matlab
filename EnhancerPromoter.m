@@ -32,6 +32,9 @@ fid2 = fopen(out3,'w'); %out3 was 'mCO_1e-3.bed'
 fid3 = fopen(out2,'w'); %out2 was 'mCO_1e-2.bed'
 fid4 = fopen(outRand,'w'); %outRand was 'mCO_rand.bed'
 fid5 = fopen(out52,'w');
+
+rng('shuffle');
+
 for i=1:N,
     if ~strcmp(chr{i},ch)
 	    continue; %skip genes not in chromosome

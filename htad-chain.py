@@ -58,7 +58,7 @@ chrsize = c.get(sec,'chrsize')
 prefix = c.get(sec,'output_prefix')
 output_dir = c.get(sec,'output_dir')
 input_matrix_path = c.get(sec,'input_matrix')
-chrnum = int(chrname.replace('chr',''))
+chrnum = chrname.replace('chr','')
 fGenes = c.get(sec,'genes_file')
 try:
 	skipdixon = c.getboolean(sec,'skip_dixon')
@@ -119,7 +119,7 @@ fEnhR = makeAbsFile("enh_rand.bed")
 fEnh52 = makeAbsFile("enh_5e-2.bed")
 
 #Check file exist
-flgFixMatrix = not os.path.exists(fMatrix2) and not skipdixon
+flgShouldFixMatrix = not os.path.exists(fMatrix2) and not skipdixon
 flgDI = not os.path.exists(fDI) and not skipdixon
 flgHMM = not os.path.exists(fHMM) and not skipdixon
 flg7col = not os.path.exists(f7col) and not skipdixon
@@ -131,10 +131,10 @@ flgNewTads = not (os.path.exists(fMatrixDbg) and os.path.exists(fNewDomains))
 flgBed = not (os.path.exists(fBed))
 flgME = not (os.path.exists(fBedModelEstimated))
 flgHrrcDebug = not (os.path.exists(fHrrcDebug))
-flgEnh = not (os.path.exists(fEnh4) or os.path.exists(fEnh3) or os.path.exists(fEnh2) or os.path.exists(fEnhR) or os.path.exists(fEnh52)) 
+flgEnh = not (os.path.exists(fEnh4) and os.path.exists(fEnh3) and os.path.exists(fEnh2) and os.path.exists(fEnhR) and os.path.exists(fEnh52)) 
 
 #Matrix fixer
-if !flgFixMatrix:
+if flgShouldFixMatrix:
 	with open(fMatrix,"rb") as f:
 		try:
 			line = f.readline()
@@ -155,6 +155,8 @@ if !flgFixMatrix:
 			print "Exception occured: %s"%e
 			print "Probably this matrix is not in the right format"
 			exit()
+else:
+	print "Not fixing matrix"
 
 #Stage 1 - ./DI_from_matrix.pl matrix.chrN @res @win @chrsize > DI.chrN
 line_mat_to_di = "DI_from_matrix.pl %s %s %s %s > %s"
@@ -260,7 +262,7 @@ doMatlabStageWithFlag("DebugHierarchies",stage_line,path_to_matlab,matlab_dump,f
 matlab_dump = output_dir + "/%s.%s.mdump8"%(prefix,chrname)
 matlab_dump = os.path.abspath(matlab_dump)
 #	      EnhancerPromoter(fnij,fme,fgenes,res,ch,out4,out3,out2,outRand)
-stage_line = "EnhancerPromoter %s %s %s %d %d %s %s %s %s %s"
+stage_line = "EnhancerPromoter %s %s %s %d %s %s %s %s %s %s"
 stage_line = stage_line%(fMatrixDbg,fMatrixModelEstimated,fGenes,res,chrnum,fEnh4,fEnh3,fEnh2,fEnhR,fEnh52) 
 print stage_line
 doMatlabStageWithFlag("EnhancerPromoter",stage_line,path_to_matlab,matlab_dump,flgEnh)

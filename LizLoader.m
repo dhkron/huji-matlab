@@ -1,8 +1,8 @@
 function [a,a_norm] = RegularLoader(chrNum)
-	dataPath = sprintf('/cs/cbio/gil/raw/Liz/WT_chr%d.txt',chrNum);
-	normPath = sprintf('HiC-CSV-Matrices/normalization_vector_LIZ_WT_chr%d.mat', chrNum);	
-	%dataPath = sprintf('/cs/cbio/gil/raw/Liz/KO_chr%d.txt',chrNum);
-	%normPath = sprintf('HiC-CSV-Matrices/normalization_vector_LIZ_chr%d.mat', chrNum);	
+	dataPath = sprintf('/cs/cbio/gil/raw/Liz/WT_chr%s.txt',chrNum);
+	normPath = sprintf('HiC-CSV-Matrices/normalization_vector_LIZ_WT_chr%s.mat', chrNum);	
+	%dataPath = sprintf('/cs/cbio/gil/raw/Liz/KO_chr%s.txt',chrNum);
+	%normPath = sprintf('HiC-CSV-Matrices/normalization_vector_LIZ_chr%s.mat', chrNum);	
 
 	a = load(dataPath);
 

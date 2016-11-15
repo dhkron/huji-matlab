@@ -1,6 +1,6 @@
 % Can be used for other resolutions too
 function [] = Liberman5kConvert(prefix, path)
-	for i = 1:20
+	for i = 21:22
 		Log(['Parsing chr' num2str(i)]);
 		a = LibermanLoader(i,25000,path);
 		Log();

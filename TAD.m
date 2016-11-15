@@ -155,7 +155,7 @@ else
 end
 
 %DisplayHeatmap( triu(a_pdt) + tril(a_pdb') , [0 1] , box );
-%title(sprintf('Pd(TAD) & Pd(BG), chr%d',chrNumber));
+%title(sprintf('Pd(TAD) & Pd(BG), chr%s',chrNumber));
 
 %DisplayHeatmap( triu(log(a_diag+1)) + tril(a_tadmap' + a_crossmap') , [-4 4], box);
 
@@ -178,7 +178,7 @@ for cost = [0 100 300 1000 3000 10000]
 	%DisplayHeatmap( triu(a_lpr) + tril(a_lpr') , [-4 4], box);
 	%f = DisplayHeatmap(log(a), 0, box, 'red');
 	f = DisplayHeatmap(a_lpr, [-2 4], box); %lpr = llr
-	title(sprintf('LogLikelihood + TAD mapping, chr%d cost=%d res=%d',chrNumber,cost,BLOCK_SIZE));
+	title(sprintf('LogLikelihood + TAD mapping, chr%s cost=%d res=%d',chrNumber,cost,BLOCK_SIZE));
 	Log(sprintf('Deriving TADs from matrix, cost = %d',cost));
 	%[a_t_mp, a_t_sl, a_bnd_mask] = DynProgTAD(a_pyrsky,box(1),box(end),cost,a_old_mask);
 	[a_t_mp, a_t_sl, a_bnd_mask] = DynProgTAD(a_pyrsky,box(1),box(end),cost,a_old_mask);
@@ -200,7 +200,7 @@ for cost = [0 100 300 1000 3000 10000]
 %		vl=a_t_mp(rng(1),i)+a_t_mp(i+1,rng(2))-cost;
 %		asum(i-rng(1)+1)=vl;
 %	end;
-%	plot(asum); title(sprintf('%d-%d, chr%d',rng(1),rng(2),chrNumber));
+%	plot(asum); title(sprintf('%d-%d, chr%s',rng(1),rng(2),chrNumber));
 end
 %legend('quack','100000' ,'10000' ,'3000' ,'1000' ,'300' ,'10' ,'0');
 
@@ -208,7 +208,7 @@ end
 %a_log_diag = log(a_diag+1);
 %a_log_diag = max(a_pyrsky(:))*(a_log_diag-min(a_log_diag(:)))/(max(a_log_diag(:))-min(a_log_diag(:)))+min(a_pyrsky(:));
 %DisplayHeatmap(triu(a_pyrsky) + tril(a_log_diag'),[min(a_pyrsky(:)) max(a_pyrsky(:))], box);
-%title(sprintf('Supersum vs. log(heatmap), chr%d',chrNumber));
+%title(sprintf('Supersum vs. log(heatmap), chr%s',chrNumber));
 
 %Extract probability for TAD diagonals only
 if 0

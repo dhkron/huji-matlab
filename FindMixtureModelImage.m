@@ -2,8 +2,8 @@
 function [a,a_tad,a_bg,a_cross] = FindMixtureModelImage(chrNum,prefix,res,win,diagNums)
 
 dirPath = '/cs/grad/gilr02/cbio/htad-chain/output/';
-fMatrix = [dirPath prefix sprintf('.matrix.chr%d.txt',chrNum)];
-fDomains = [dirPath prefix sprintf('.domains.chr%d.txt',chrNum)];
+fMatrix = [dirPath prefix sprintf('.matrix.chr%s.txt',chrNum)];
+fDomains = [dirPath prefix sprintf('.domains.chr%s.txt',chrNum)];
 	
 blush = [0 66 123; 4 85 139; 10 97 154; 30 115 172; 40 130 200; 60 150 210]/255;
 redsh = [171 55 54; 178 61 60; 196 66 66; 217 50 31; 231 79 78; 233 104 104]/255;
@@ -81,7 +81,7 @@ for diagNum = diagNums
 	%figure;
 	%qqplot(xi_t);
 	% For saving lots of images: Was used for finding a good image
-	%title(sprintf('%s chr%d diag %d res %d',prefix,chrNum,diagNum,res));
+	%title(sprintf('%s chr%s diag %d res %d',prefix,chrNum,diagNum,res));
 	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.png',prefix,chrNum,diagNum,res));
 	%SaveFigure(gcf,sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/%s.%d.%d.%d.fig',prefix,chrNum,diagNum,res));
 

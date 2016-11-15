@@ -37,7 +37,7 @@ function [a,a_llr,s] = CreateSingleHierarchyBed(fMat,fLLR,fSupersum,prefix,res,c
 
 	view(-45,90);
 
-	title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',prefix,chr,box(1),box(end)));
+	title(sprintf('Hierarchy TAD numbered nesting - %s chr%s [blocks %d-%d]',prefix,chr,box(1),box(end)));
 
 	g=gcf;
 	if hasFig

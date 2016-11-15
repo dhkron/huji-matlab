@@ -1,6 +1,6 @@
 function [tad_size, tad_color] = CalcTADStrength(chrNumber,MIN_DIAG,MAX_DIAG,a_size,BLOCK_SIZE,doPlot)
 
-domains = load(sprintf('TADs/domains.IMR90.chr%d', chrNumber));
+domains = load(sprintf('TADs/domains.IMR90.chr%s', chrNumber));
 domains = floor(domains/BLOCK_SIZE)+1; %To start from 1
 tad_size = zeros(1,a_size);
 tad_color = zeros(1,a_size);

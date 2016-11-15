@@ -6,8 +6,8 @@ function [a,a_llr,s] = CreateSingleHierarchyBedNewMethod(fMat,fNewDomains,fBgMod
 	if ischar(res)
 		res = str2num(res);
 	end;
-	if ischar(chr)
-		chr = str2num(chr);
+	if isnumeric(chr)
+		chr = num2str(chr);
 	end;
 
 	Log('Loading files');
@@ -41,7 +41,7 @@ function [a,a_llr,s] = CreateSingleHierarchyBedNewMethod(fMat,fNewDomains,fBgMod
 	if hasFig
 		g=gcf;
 		view(-45,90);
-		title(sprintf('Hierarchy TAD numbered nesting - %s chr%d [blocks %d-%d]',prefix,chr,box(1),box(end)));
+		title(sprintf('Hierarchy TAD numbered nesting - %s chr%s [blocks %d-%d]',prefix,chr,box(1),box(end)));
 		SaveFigure(g,figPath);
 		%path = sprintf('/cs/grad/gilr02/Dropbox/Bio/NextMeeting/Hierarchies_%s_Chr%d_Full.png',prefix,chr);
 		close(gcf);

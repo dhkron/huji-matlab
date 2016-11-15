@@ -1,15 +1,19 @@
 function [a,a_norm] = LibermanLoader(chrNum,res,path)
 	if ~exist('path','var')
 		Log('Using default directory for backward compatibility');
-		dirOfMight = '/cs/cbio/gil/raw/GSE63525_5K_Liberman/GM12878_combined/%sb_resolution_intrachromosomal/chr%d';
+		dirOfMight = '/cs/cbio/gil/raw/GSE63525_5K_Liberman/GM12878/%sb_resolution_intrachromosomal/chr%s';
 		Log();
 	else
-		dirOfMight = ['/cs/cbio/gil/raw/GSE63525_5K_Liberman/' path '/%sb_resolution_intrachromosomal/chr%d'];
+		dirOfMight = ['/cs/cbio/gil/raw/GSE63525_5K_Liberman/' path '/%sb_resolution_intrachromosomal/chr%s'];
+	end
+
+	if isnumeric(chrNum)
+		chrNum = num2str(chrNum)
 	end
 
 	mapq1 = 'MAPQG0'; %More data here, less accurate
 	mapq2 = 'MAPQGE30';
-	filePrefix = 'chr%d_%sb';
+	filePrefix = 'chr%s_%sb';
 	fileTypeData = 'RAWobserved';
 	fileTypeNorm = 'KRnorm';
 

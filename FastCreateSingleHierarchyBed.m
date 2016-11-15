@@ -3,7 +3,7 @@ function [a,a_llr,s] = FastCreateSingleHierarchyBed(prefix,res,chr,box,bedPath,f
 	hasBed = ( exist('bedPath','var') && numel(bedPath)>0 );	
 	hasFig = ( exist('figPath','var') && numel(figPath)>0 );	
 
-	template = '/cs/cbio/gil/htad-chain/output/%s.%s.chr%d.txt';
+	template = '/cs/cbio/gil/htad-chain/output/%s.%s.chr%s.txt';
 	a = (sprintf(template,prefix,'matrix',chr));
 	a_llr = (sprintf(template,prefix,'llr',chr));
 	s = (sprintf(template,prefix,'supersum',chr));

@@ -19,11 +19,12 @@ function [RES_Hrr,RES_Tad,RES_Dxn] = RebuildMatrix(matPath,bedPath,dxnPath,bedOu
 	nij = load(matPath);
 	
 	fBed = fopen(bedPath,'r');
-	[BED,C] = textscan(fBed,'chr%d\t%f\t%f\t%s\t%f',Inf);
+	[BED,C] = textscan(fBed,'chr%s\t%f\t%f\t%s\t%f',Inf);
 
 	firstMergeIndex = find(cellfun(@(x) strcmp(x,'Merge1'), BED{4}, 'UniformOutput', 1));
 
-	chrNum = min(cell2mat(BED(1)));
+	chrNum = BED{1}{1};
+	assert(numel(unique(BED{1}))==1); %Should not have more then one chromosome here
 
 	myBounds = floor( [ cell2mat(BED(2)) cell2mat(BED(3)) ]/res )+1;
 
@@ -203,7 +204,7 @@ function BedWrite(outPath,bed,chrNum,mergeIndex)
 			txt = 'Sky';
 		end
 		ln = bed(:,i);
-		fprintf(f,'chr%d\t%d\t%d\t%s\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n',chrNum,ln(1),ln(2),txt,ln(3),ln(4),ln(5),ln(6),ln(7),ln(8),ln(9));
+		fprintf(f,'chr%s\t%d\t%d\t%s\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n',chrNum,ln(1),ln(2),txt,ln(3),ln(4),ln(5),ln(6),ln(7),ln(8),ln(9));
 	end
 	fclose(f);
 end

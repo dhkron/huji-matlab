@@ -9,7 +9,7 @@
 % 6. Store histograms
 function [blockHistVector, cmap] = LoadGenomeToHists(chrNumber, blockSize, wordlen, wordbase)
 %Constants
-dataFile = sprintf('chr%d',chrNumber);
+dataFile = sprintf('chr%s',chrNumber);
 cmap = zeros(1,116)-wordbase^(wordlen+1); %Ensure negativity of words containing bad chars
 cmap('aA') = 0;
 cmap('cC') = 1;

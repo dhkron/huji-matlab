@@ -1,6 +1,6 @@
 function [a,a_norm] = RegularLoader(chrNum)
-	dataPath = sprintf('HiC-CSV-Matrices/IMR90_chr%d_40k',chrNum);
-	normPath = sprintf('HiC-CSV-Matrices/normalization_vector_IMR90_chr%d_40k.mat', chrNum);	
+	dataPath = sprintf('HiC-CSV-Matrices/IMR90_chr%s_40k',chrNum);
+	normPath = sprintf('HiC-CSV-Matrices/normalization_vector_IMR90_chr%s_40k.mat', chrNum);	
 
 	a = load(dataPath);
 
